@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { 
   GoogleAuthProvider, 
   signInWithRedirect,
+  signInWithPopup,
   getRedirectResult,
   signOut, 
   onAuthStateChanged, 
@@ -28,6 +29,20 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// Helper function to set the auth token cookie
+const setAuthCookie = async (user: User | null) => {
+  if (user) {
+    const token = await user.getIdToken();
+    // Set the auth token as an HTTP-only cookie
+    document.cookie = `auth_token=${token}; path=/; max-age=3600; SameSite=Strict`;  // Removed HttpOnly for debugging
+    console.log('Auth token cookie set:', document.cookie.includes('auth_token'));
+  } else {
+    // Remove the auth token cookie
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    console.log('Auth token cookie removed');
+  }
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,20 +52,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
+        console.log('Redirect result:', result?.user ? 'User exists' : 'No user');
         if (result?.user) {
+          await setAuthCookie(result.user);
           setUser(result.user);
-          router.push('/');
+          router.push('/home');
         }
       } catch (error) {
         console.error('Error handling redirect result:', error);
       }
     };
 
-    // Handle redirect result when component mounts
-    handleRedirectResult();
+    // Handle redirect result only in production (when using signInWithRedirect)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isDevelopment) {
+      handleRedirectResult();
+    }
 
     // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user ? 'User exists' : 'No user');
+      await setAuthCookie(user);
       setUser(user);
       setLoading(false);
     });
@@ -65,7 +87,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-      await signInWithRedirect(auth, provider);
+      
+      // Use popup for development, redirect for production
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      if (isDevelopment) {
+        // Use popup authentication for local development
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          await setAuthCookie(result.user);
+          router.push('/home');
+        }
+      } else {
+        // Use redirect authentication for production
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       setLoading(false);
@@ -75,6 +111,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       await signOut(auth);
+      await setAuthCookie(null);
       router.push('/login');
     } catch (error) {
       console.error('Error signing out:', error);

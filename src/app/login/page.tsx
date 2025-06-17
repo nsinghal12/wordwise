@@ -5,14 +5,23 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
+
+  console.log('Login page - User:', user?.email);
+  console.log('Login page - Loading:', loading);
+  console.log('Login page - Auth cookie exists:', document.cookie.includes('auth_token'));
 
   useEffect(() => {
     if (user) {
-      router.push('/dashboard');
+      console.log('Login page - User exists, redirecting to home');
+      router.push('/home');
     }
   }, [user, router]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -24,6 +33,11 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-gray-600">
             Please sign in to continue
           </p>
+          <div className="mt-4 text-xs text-gray-500">
+            <p>Debug Info:</p>
+            <p>User: {user?.email || 'Not signed in'}</p>
+            <p>Auth Cookie: {document.cookie.includes('auth_token') ? 'Present' : 'Not present'}</p>
+          </div>
         </div>
         <div className="mt-8">
           <button
