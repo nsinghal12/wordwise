@@ -29,9 +29,9 @@ export default function App() {
     switch (currentRoute) {
       case '/':
       case '/home':
-        return <Home onHistoryItemClick={handleHistoryItemClick} />
+        return <Home />
       default:
-        return <Home onHistoryItemClick={handleHistoryItemClick} />
+        return <Home />
     }
   }
 
