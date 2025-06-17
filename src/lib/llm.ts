@@ -4,8 +4,11 @@ if (!process.env.OPENAI_API_KEY) {
   console.warn('Missing OPENAI_API_KEY environment variable');
 }
 
+// Ensure the API key is properly formatted by trimming any whitespace
+const apiKey = process.env.OPENAI_API_KEY?.trim();
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: apiKey,
 });
 
 export interface LLMResponse {

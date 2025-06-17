@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { invokeLLM } from '@/lib/llm';
 
 export async function POST(request: Request) {
   try {
@@ -35,9 +36,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // For now, just return "hello world" in markdown format
+    // Create the blog writing prompt
+    const blogPrompt = `Write a blog post on the following topic and return the content in markdown format:\n\n${prompt}`;
+    
+    // Call the LLM service
+    const llmResponse = await invokeLLM(blogPrompt);
+
+    // Check for errors from LLM
+    if (llmResponse.error) {
+      return NextResponse.json(
+        { error: 'Error generating blog content', details: llmResponse.error },
+        { status: 500 }
+      );
+    }
+
+    // Return the generated content
     return NextResponse.json({
-      content: '# hello world'
+      content: llmResponse.content
     });
     
   } catch (error) {
