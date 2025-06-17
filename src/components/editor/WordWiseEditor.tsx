@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { marked } from 'marked';
 
-const WordWiseEditor: React.FC = () => {
+interface WordWiseEditorProps {
+    initialContent?: string;
+}
+
+const WordWiseEditor: React.FC<WordWiseEditorProps> = ({ initialContent = '# Start writing here...' }) => {
     const editor = useEditor({
         extensions: [
             StarterKit,
         ],
-        content: '<p>Start writing here...</p>',
+        content: '', // Initialize empty, we'll set content after converting markdown
         editorProps: {
             attributes: {
                 class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
             },
         },
     });
+
+    useEffect(() => {
+        if (editor && initialContent) {
+            // Convert markdown to HTML before setting editor content
+            const htmlContent = marked.parse(initialContent);
+            editor.commands.setContent(htmlContent);
+        }
+    }, [editor, initialContent]);
 
     return (
         <div className="border rounded-lg p-4 shadow-sm">

@@ -24,10 +24,26 @@ import {
   Paperclip,
   X,
 } from "lucide-react"
+import { createBlog } from "@/lib/blog"
 
 export default function Home() {
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
+  const [editorContent, setEditorContent] = useState<string>('')
+
+  const handleSubmit = async () => {
+    const promptInput = document.getElementById('prompt-input') as HTMLInputElement;
+    if (promptInput?.value) {
+      try {
+        const content = await createBlog(promptInput.value);
+        setEditorContent(content);
+        setShowEditor(true);
+      } catch (error) {
+        console.error('Error submitting prompt:', error);
+        // You might want to show an error message to the user here
+      }
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -119,7 +135,7 @@ export default function Home() {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              <WordWiseEditor />
+              <WordWiseEditor initialContent={editorContent} />
             </div>
           ) : (
             <div className="w-full max-w-4xl">
@@ -128,7 +144,7 @@ export default function Home() {
               {/* Input Area */}
               <div className="relative mb-8">
                 <div className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm">
-                  <Input placeholder="Ask WordWise to create..." className="border-0 text-base p-0 focus-visible:ring-0" />
+                  <Input id='prompt-input' placeholder="Ask WordWise to create..." className="border-0 text-base p-0 focus-visible:ring-0" />
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-2">
                       <DropdownMenu>
@@ -161,7 +177,7 @@ export default function Home() {
                       <Button variant="ghost" size="sm">
                         <Paperclip className="w-4 h-4" />
                       </Button>
-                      <Button id='submit-button' variant="ghost" size="sm" onClick={() => setShowEditor(true)}>
+                      <Button id='submit-button' variant="ghost" size="sm" onClick={handleSubmit}>
                         <ArrowUp className="w-4 h-4" />
                       </Button>
                     </div>
