@@ -1,103 +1,190 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Search,
+  FolderOpen,
+  Clock,
+  Users,
+  ChevronRight,
+  ChevronDown,
+  Camera,
+  Upload,
+  FileText,
+  UserPlus,
+  Share2,
+  ArrowUp,
+  Paperclip,
+  X,
+} from "lucide-react"
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Left Sidebar */}
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-bold">
+              v0
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium">Personal</span>
+              <span className="text-xs text-gray-500">Free</span>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </div>
+          </div>
+          <Button className="w-full justify-start bg-gray-100 text-gray-700 hover:bg-gray-200">New Dcoument</Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Navigation */}
+        <div className="flex-1 p-4 space-y-2">
+          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
+            <Search className="w-4 h-4" />
+            Search
+          </div>
+          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
+            <FolderOpen className="w-4 h-4" />
+            Projects
+          </div>
+          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
+            <Clock className="w-4 h-4" />
+            Recents
+          </div>
+          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
+            <Users className="w-4 h-4" />
+            Community
+          </div>
+
+          {/* Collapsible Sections */}
+          <div className="pt-4 space-y-2">
+            <div className="flex items-center justify-between px-2 py-1 text-sm text-gray-500">
+              <span>Favorite Projects</span>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+            <div className="flex items-center justify-between px-2 py-1 text-sm text-gray-500">
+              <span>Favorite Chats</span>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+            <div
+              className="flex items-center justify-between px-2 py-1 text-sm text-gray-500 cursor-pointer"
+              onClick={() => setIsRecentsExpanded(!isRecentsExpanded)}
+            >
+              <span>Recents</span>
+              {isRecentsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </div>
+            {isRecentsExpanded && (
+              <div className="px-4 py-2 text-sm text-gray-400">You haven't created any chats yet.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+          <div className="flex items-center gap-2">
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm">
+              Feedback
+            </Button>
+            <Avatar className="w-8 h-8">
+              <AvatarImage src="/placeholder-user.jpg" />
+              <AvatarFallback className="bg-green-500 text-white">U</AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="w-full max-w-4xl">
+            <h1 className="text-4xl font-bold text-center mb-8 text-gray-900">What can I help you create?</h1>
+
+            {/* Input Area */}
+            <div className="relative mb-8">
+              <div className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm">
+                <Input placeholder="Ask WordWise to create..." className="border-0 text-base p-0 focus-visible:ring-0" />
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-sm">
+                          New Project
+                          <ChevronDown className="w-4 h-4 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>New Project</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-sm">
+                          v0-1.5-md
+                          <ChevronDown className="w-4 h-4 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>v0-1.5-md</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm">
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <ArrowUp className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap justify-center gap-3 mb-12">
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Clone a Screenshot
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-purple-500 rounded text-white flex items-center justify-center text-xs">
+                  F
+                </div>
+                Import from Figma
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload a Project
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Landing Page
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                Sign Up Form
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
