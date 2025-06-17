@@ -291,11 +291,13 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     const SuggestionPanel = () => {
         if (!showSuggestionPanel) return null;
 
-        const relevantGrammarErrors = errors.filter(error => 
-            selectedRange && 
-            error.offset >= selectedRange.from && 
-            error.offset + error.length <= selectedRange.to
-        );
+        // Show all errors if no text is selected, otherwise show only errors in selection
+        const relevantGrammarErrors = selectedRange 
+            ? errors.filter(error => 
+                error.offset >= selectedRange.from && 
+                error.offset + error.length <= selectedRange.to
+            )
+            : errors;
 
         const spellingSuggestions = selectedText ? getSpellingSuggestions(selectedText) : [];
 
@@ -313,7 +315,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                         <X className="w-4 h-4" />
                     </button>
                 </div>
-                
+            
                 <div className="p-4 space-y-4">
                     {selectedText && (
                         <div className="text-sm text-gray-500">
@@ -365,10 +367,12 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                                             <button
                                                 key={idx}
                                                 onClick={() => {
-                                                    if (selectedRange) {
-                                                        applySuggestion(replacement, selectedRange);
-                                                        setShowSuggestionPanel(false);
-                                                    }
+                                                    const range = {
+                                                        from: error.offset,
+                                                        to: error.offset + error.length
+                                                    };
+                                                    applySuggestion(replacement, range);
+                                                    setShowSuggestionPanel(false);
                                                 }}
                                                 className="block w-full text-left px-3 py-2 text-sm bg-white hover:bg-[#11A683] hover:text-white rounded-lg transition-colors"
                                             >
@@ -381,9 +385,9 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                         </div>
                     )}
 
-                    {!selectedText && (
+                    {!selectedText && relevantGrammarErrors.length === 0 && (
                         <div className="text-center text-gray-500 py-4">
-                            Select text or click on an underlined word to see suggestions
+                            Select text to see spelling suggestions or click on an underlined word
                         </div>
                     )}
                 </div>
