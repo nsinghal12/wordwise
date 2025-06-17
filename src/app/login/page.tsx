@@ -33,11 +33,11 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-gray-600">
             Please sign in to continue
           </p>
-          <div className="mt-4 text-xs text-gray-500">
+          {/* <div className="mt-4 text-xs text-gray-500">
             <p>Debug Info:</p>
             <p>User: {user?.email || 'Not signed in'}</p>
             <p>Auth Cookie: {document.cookie.includes('auth_token') ? 'Present' : 'Not present'}</p>
-          </div>
+          </div> */}
         </div>
         <div className="mt-8">
           <button
