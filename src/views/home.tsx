@@ -61,27 +61,8 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
   return (
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
       <div className="w-full max-w-4xl">
-        {/* Editor Section */}
-        {/* {showEditor && (
-          <div className="transform transition-all duration-300 ease-in-out">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-8 hover:shadow-xl transition-shadow">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Editor</h2>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowEditor(false)}
-                  className="hover:bg-gray-100 rounded-full p-2 transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </Button>
-              </div>
-              <WordWiseEditor initialContent={editorContent} />
-            </div>
-          </div>
-        )} */}
 
-        <div className="transform transition-all duration-300 ease-in-out">
+        <div className="transform transition-all duration-300 ease-in-out pb-8">
           <WordWiseEditor initialContent={editorContent} />
         </div>
 
