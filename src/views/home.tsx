@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -33,6 +33,14 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
   const [editorContent, setEditorContent] = useState<string>(hasHistoryItem ? selectedHistoryItem?.content || '' : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
+
+  useEffect(() => {
+    if (hasHistoryItem) {
+      setPromptValue(selectedHistoryItem?.prompt || '');
+      setEditorContent(selectedHistoryItem?.content || '');
+      setShowEditor(true);
+    }
+  }, [hasHistoryItem, selectedHistoryItem]);
 
   const handleSubmit = async () => {
     if (promptValue && !isSubmitting) {
