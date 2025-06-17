@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { marked } from 'marked';
@@ -41,6 +41,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     const [hasProfanity, setHasProfanity] = useState(false);
     const [profanityWords, setProfanityWords] = useState<string[]>([]);
     const profanityFilter = new Filter();
+    const spellCheckTimeoutRef = useRef<NodeJS.Timeout>();
 
     // Initialize spellchecker
     useEffect(() => {
@@ -68,6 +69,63 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
         loadDictionary();
     }, []);
+
+    // Spell check function wrapped in useCallback
+    const performSpellCheck = useCallback((text: string) => {
+        if (!spellChecker) return;
+
+        // Run spell check in a non-blocking way using a Promise
+        Promise.resolve().then(() => {
+            const words = getWordsForSpellCheck(text);
+            let position = 0;
+            const errors: SpellingError[] = [];
+
+            words.forEach(word => {
+                if(!word || word.length === 0) {
+                    return;
+                }
+
+                // clean up the word
+                word = word.replace(/[.,!?:;]+$/, '');
+
+                // Skip empty words, numbers, and URLs
+                if (!word.match(/^\d+$/) && !word.match(/^https?:\/\//)) {
+                    if (!spellChecker.check(word)) {
+                        errors.push({
+                            word,
+                            start: position,
+                            length: word.length
+                        });
+                    }
+                }
+                position += word.length + 1; // +1 for the space
+            });
+
+            setSpellingErrors(errors);
+            setHasSpellingErrors(errors.length > 0);
+
+            const profaneWords = words.filter(word => profanityFilter.isProfane(word));
+            setHasProfanity(profaneWords.length > 0);
+            setProfanityWords(profaneWords);
+
+
+            // Automatically show suggestions panel if there are errors
+            if (errors.length > 0) {
+                setShowSuggestionPanel(true);
+            }
+        });
+    }, [spellChecker, setSpellingErrors, setHasSpellingErrors, setShowSuggestionPanel]);
+
+    // Debounced spell check
+    const debouncedSpellCheck = useCallback((text: string) => {
+        if (spellCheckTimeoutRef.current) {
+            clearTimeout(spellCheckTimeoutRef.current);
+        }
+
+        spellCheckTimeoutRef.current = setTimeout(() => {
+            performSpellCheck(text);
+        }, 500); // 500ms debounce delay
+    }, [performSpellCheck, spellCheckTimeoutRef]);
 
     const editor = useEditor({
         extensions: [
@@ -110,53 +168,10 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             const text = editor.getText();
             setContent(text);
 
+            // Use debounced spell check instead of immediate check
             if (spellChecker) {
-                // Check for spelling errors
-                const words = getWordsForSpellCheck(text);
-                let position = 0;
-                const errors: SpellingError[] = [];
-
-                words.forEach(word => {
-                    if(!word || word.length === 0) {
-                        return;
-                    }
-
-                    // clean up the word
-                    word = word.replace(/[.,!?:;]+$/, '');
-
-                    // Skip empty words, numbers, and URLs
-                    if (// Skip numbers
-                        !word.match(/^\d+$/) &&
-
-                        // Skip URLs
-                        !word.match(/^https?:\/\//)
-                    ) {
-                        if (!spellChecker.check(word)) {
-                            errors.push({
-                                word,
-                                start: position,
-                                length: word.length
-                            });
-                        }
-                    }
-                    position += word.length + 1; // +1 for the space
-                });
-
-                console.log('Found spelling errors:', errors); // Debug log
-                setSpellingErrors(errors);
-                setHasSpellingErrors(errors.length > 0);
-
-                // Automatically show suggestions panel if there are errors
-                if (errors.length > 0) {
-                    setShowSuggestionPanel(true);
-                }
+                debouncedSpellCheck(text);
             }
-
-            // Check for profanity
-            const words = text.split(/\s+/);
-            const profaneWords = words.filter(word => profanityFilter.isProfane(word));
-            setHasProfanity(profaneWords.length > 0);
-            setProfanityWords(profaneWords);
         },
     });
 
@@ -211,7 +226,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 await html2pdf().set(opt).from(element).save();
 
                 // Remove the footer after PDF generation
-                editor.view.dom.removeChild(footerElement);
+                // editor.view.dom.removeChild(footerElement);
             } catch (error) {
                 console.error('Error generating PDF:', error);
             } finally {
@@ -592,7 +607,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                     Suggestions
                     {(hasSpellingErrors || errors.length > 0) && (
                         <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                            {errors.length + (hasSpellingErrors ? 1 : 0)}
+                            {errors.length}
                         </span>
                     )}
                 </button>
