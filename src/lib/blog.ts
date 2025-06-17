@@ -1,3 +1,5 @@
+import { saveBlogToHistory } from './blogHistory';
+
 // Function to create blog post via API
 export async function createBlog(prompt: string): Promise<string> {
     try {
@@ -14,6 +16,8 @@ export async function createBlog(prompt: string): Promise<string> {
         }
 
         const data = await response.json();
+        // Save to history after successful creation
+        saveBlogToHistory(prompt, data.content);
         return data.content;
     } catch (error) {
         console.error('Error creating blog:', error);

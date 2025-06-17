@@ -4,11 +4,20 @@ import StarterKit from '@tiptap/starter-kit';
 import { marked } from 'marked';
 import Alignment from '@tiptap/extension-text-align';
 import { useGrammarCheck, GrammarError } from '../../lib/useGrammarCheck';
+import { Save, FileDown, Check, X, AlertTriangle, MessageSquare, Wand2 } from 'lucide-react';
+import { Filter } from 'bad-words';
+import Spellchecker from 'hunspell-spellchecker';
 
 interface WordWiseEditorProps {
     initialContent?: string;
     spellCheck?: boolean;
     grammarCheck?: boolean;
+}
+
+interface SpellingError {
+    word: string;
+    start: number;
+    length: number;
 }
 
 const WordWiseEditor: React.FC<WordWiseEditorProps> = ({ 
@@ -19,6 +28,39 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     const [content, setContent] = useState('');
     const [showGrammarSuggestions, setShowGrammarSuggestions] = useState(false);
     const [selectedError, setSelectedError] = useState<GrammarError | null>(null);
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+    const [hasSpellingErrors, setHasSpellingErrors] = useState(false);
+    const [spellingErrors, setSpellingErrors] = useState<SpellingError[]>([]);
+    const [showSuggestionPanel, setShowSuggestionPanel] = useState(false);
+    const [selectedText, setSelectedText] = useState('');
+    const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
+    const [spellChecker, setSpellChecker] = useState<Spellchecker | null>(null);
+    const [hasProfanity, setHasProfanity] = useState(false);
+    const [profanityWords, setProfanityWords] = useState<string[]>([]);
+    const filter = new Filter();
+
+    // Initialize spellchecker
+    useEffect(() => {
+        const loadDictionary = async () => {
+            try {
+                const [affData, dicData] = await Promise.all([
+                    fetch('/dictionaries/en_US.aff').then(response => response.text()),
+                    fetch('/dictionaries/en_US.dic').then(response => response.text())
+                ]);
+                
+                const checker = new Spellchecker();
+                checker.addDictionary({
+                    aff: affData,
+                    dic: dicData
+                });
+                setSpellChecker(checker);
+            } catch (error) {
+                console.error('Failed to load dictionary:', error);
+            }
+        };
+        
+        loadDictionary();
+    }, []);
 
     const editor = useEditor({
         extensions: [
@@ -27,16 +69,70 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 types: ['heading', 'paragraph'],
             }),
         ],
-        content: '', // Initialize empty, we'll set content after converting markdown
+        content: initialContent,
         editorProps: {
             attributes: {
                 class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
                 spellcheck: spellCheck ? 'true' : 'false',
                 autocorrect: spellCheck ? 'on' : 'off',
             },
+            handleClick(view, pos, event) {
+                const { from, to } = view.state.selection;
+                const selectedText = view.state.doc.textBetween(from, to);
+                setSelectedText(selectedText);
+                setSelectedRange({ from, to });
+
+                // Check if clicked on a misspelled word
+                if (!selectedText && event.target instanceof HTMLElement) {
+                    const element = event.target;
+                    if (element.classList.contains('spelling-error')) {
+                        const word = element.textContent || '';
+                        setSelectedText(word);
+                        // Find the position of this word in the document
+                        const parent = element.parentElement;
+                        if (parent) {
+                            const offset = Array.from(parent.childNodes).indexOf(element);
+                            setSelectedRange({ from: pos - word.length, to: pos });
+                        }
+                    }
+                }
+                return false;
+            },
         },
         onUpdate: ({ editor }) => {
-            setContent(editor.getText());
+            const text = editor.getText();
+            setContent(text);
+            
+            if (spellChecker) {
+                // Check for spelling errors
+                const words = text.split(/\s+/);
+                let position = 0;
+                const errors: SpellingError[] = [];
+                
+                words.forEach(word => {
+                    // Skip empty words, numbers, and URLs
+                    if (word.length > 0 && 
+                        !word.match(/^\d+$/) && 
+                        !word.match(/^https?:\/\//) &&
+                        !spellChecker.check(word)) {
+                        errors.push({
+                            word,
+                            start: position,
+                            length: word.length
+                        });
+                    }
+                    position += word.length + 1; // +1 for the space
+                });
+                
+                setSpellingErrors(errors);
+                setHasSpellingErrors(errors.length > 0);
+            }
+
+            // Check for profanity
+            const words = text.split(/\s+/);
+            const profaneWords = words.filter(word => filter.isProfane(word));
+            setHasProfanity(profaneWords.length > 0);
+            setProfanityWords(profaneWords);
         },
     });
 
@@ -53,6 +149,45 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             editor.commands.setContent(htmlContent);
         }
     }, [editor, initialContent]);
+
+    // Save as PDF function
+    const saveAsPDF = useCallback(async () => {
+        if (editor && typeof window !== 'undefined' && !hasSpellingErrors && errors.length === 0 && !hasProfanity) {
+            try {
+                setIsGeneratingPDF(true);
+                // Add WordWise footer before generating PDF
+                const footerElement = document.createElement('div');
+                footerElement.className = 'text-center mt-8 pt-6';
+                footerElement.innerHTML = `
+                    <div class="inline-flex items-center gap-1.5">
+                        <span class="text-[#11A683] font-outfit text-lg font-semibold tracking-wide">
+                            Powered by <span class="bg-gradient-to-r from-[#11A683] to-[#15C39A] bg-clip-text text-transparent font-bold">WordWise</span>
+                        </span>
+                    </div>
+                `;
+                editor.view.dom.appendChild(footerElement);
+
+                // Dynamically import html2pdf only on the client side
+                const html2pdf = (await import('html2pdf.js')).default;
+                const element = editor.view.dom;
+                const opt = {
+                    margin: 1,
+                    filename: 'wordwise-document.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+                await html2pdf().set(opt).from(element).save();
+
+                // Remove the footer after PDF generation
+                editor.view.dom.removeChild(footerElement);
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+            } finally {
+                setIsGeneratingPDF(false);
+            }
+        }
+    }, [editor, hasSpellingErrors, errors, hasProfanity]);
 
     // Toggle spellcheck
     const toggleSpellCheck = () => {
@@ -78,22 +213,187 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         }
     }, [editor, selectedError]);
 
+    // Function to apply a suggestion
+    const applySuggestion = useCallback((replacement: string, range: { from: number; to: number }) => {
+        if (editor) {
+            editor
+                .chain()
+                .focus()
+                .insertContentAt(range, replacement)
+                .run();
+        }
+    }, [editor]);
+
+    // Function to get spelling suggestions
+    const getSpellingSuggestions = useCallback((word: string): string[] => {
+        if (!word || !spellChecker) return [];
+        return spellChecker.suggest(word);
+    }, [spellChecker]);
+
     const MenuButton = ({ onClick, isActive, children }: { onClick: () => void; isActive?: boolean; children: React.ReactNode }) => (
         <button
             onClick={onClick}
-            className={`mr-2 px-3 py-1 rounded hover:bg-gray-100 transition-colors ${
-                isActive ? 'bg-gray-200' : ''
+            className={`mr-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                isActive 
+                    ? 'bg-gray-100 text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
             }`}
         >
             {children}
         </button>
     );
 
-    const MenuDivider = () => <div className="h-4 w-px bg-gray-200 mx-2" />;
+    const MenuDivider = () => <div className="h-4 w-px bg-gray-200 mx-3" />;
+
+    // Custom Save Button Component
+    const SaveButton = () => {
+        const isDisabled = hasSpellingErrors || errors.length > 0 || isGeneratingPDF || hasProfanity;
+        const getButtonText = () => {
+            if (isGeneratingPDF) return 'Generating PDF...';
+            if (hasSpellingErrors) return 'Fix Spelling Errors';
+            if (errors.length > 0) return 'Fix Grammar Errors';
+            if (hasProfanity) return 'Remove Inappropriate Words';
+            return 'Save as PDF';
+        };
+
+        const getButtonIcon = () => {
+            if (isGeneratingPDF) return <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />;
+            if (hasSpellingErrors || errors.length > 0 || hasProfanity) return <X className="w-4 h-4" />;
+            return <FileDown className="w-4 h-4" />;
+        };
+
+        return (
+            <button
+                onClick={saveAsPDF}
+                disabled={isDisabled}
+                className={`
+                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+                    ${isDisabled 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : 'bg-red-50 text-red-600 hover:bg-red-100 shadow-sm hover:shadow'}
+                    ${isGeneratingPDF ? 'animate-pulse' : ''}
+                    border border-red-200
+                `}
+            >
+                {getButtonIcon()}
+                <span>{getButtonText()}</span>
+                {!isDisabled && !isGeneratingPDF && (
+                    <div className="flex items-center gap-1 ml-2 text-xs bg-red-100 px-2 py-0.5 rounded-full">
+                        <Check className="w-3 h-3" />
+                        Ready
+                    </div>
+                )}
+            </button>
+        );
+    };
+
+    // Custom Suggestion Panel Component
+    const SuggestionPanel = () => {
+        if (!showSuggestionPanel) return null;
+
+        const relevantGrammarErrors = errors.filter(error => 
+            selectedRange && 
+            error.offset >= selectedRange.from && 
+            error.offset + error.length <= selectedRange.to
+        );
+
+        const spellingSuggestions = selectedText ? getSpellingSuggestions(selectedText) : [];
+
+        return (
+            <div className="fixed bottom-4 right-4 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-[#11A683] to-[#15C39A] p-3 text-white flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Wand2 className="w-5 h-5" />
+                        <h3 className="font-medium">Writing Suggestions</h3>
+                    </div>
+                    <button 
+                        onClick={() => setShowSuggestionPanel(false)}
+                        className="text-white/80 hover:text-white transition-colors"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                    {selectedText && (
+                        <div className="text-sm text-gray-500">
+                            Selected text: <span className="font-medium text-gray-700">{selectedText}</span>
+                        </div>
+                    )}
+
+                    {spellingSuggestions.length > 0 && (
+                        <div className="space-y-3">
+                            <h4 className="font-medium text-gray-700 flex items-center gap-2">
+                                <Check className="w-4 h-4 text-[#11A683]" />
+                                Spelling Suggestions
+                            </h4>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="space-y-1">
+                                    {spellingSuggestions.map((suggestion: string, idx: number) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                if (selectedRange) {
+                                                    applySuggestion(suggestion, selectedRange);
+                                                    setShowSuggestionPanel(false);
+                                                }
+                                            }}
+                                            className="block w-full text-left px-3 py-2 text-sm bg-white hover:bg-[#11A683] hover:text-white rounded-lg transition-colors"
+                                        >
+                                            {suggestion}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {relevantGrammarErrors.length > 0 && (
+                        <div className="space-y-3">
+                            <h4 className="font-medium text-gray-700 flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-[#11A683]" />
+                                Grammar Suggestions
+                            </h4>
+                            {relevantGrammarErrors.map((error, index) => (
+                                <div 
+                                    key={index}
+                                    className="bg-gray-50 rounded-lg p-3 space-y-2"
+                                >
+                                    <p className="text-sm text-red-600">{error.message}</p>
+                                    <div className="space-y-1">
+                                        {error.replacements.slice(0, 3).map((replacement, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => {
+                                                    if (selectedRange) {
+                                                        applySuggestion(replacement, selectedRange);
+                                                        setShowSuggestionPanel(false);
+                                                    }
+                                                }}
+                                                className="block w-full text-left px-3 py-2 text-sm bg-white hover:bg-[#11A683] hover:text-white rounded-lg transition-colors"
+                                            >
+                                                {replacement}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {!selectedText && (
+                        <div className="text-center text-gray-500 py-4">
+                            Select text or click on an underlined word to see suggestions
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     return (
-        <div className="border rounded-lg p-4 shadow-sm">
-            <div className="mb-4 border-b pb-2 flex flex-wrap items-center gap-y-2">
+        <div className="border rounded-xl p-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md">
+            <div className="mb-4 border-b pb-3 flex flex-wrap items-center gap-y-2 sticky top-0 bg-white z-10">
                 {/* Text Style Controls */}
                 <MenuButton
                     onClick={() => editor?.chain().focus().toggleBold().run()}
@@ -220,6 +520,34 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 >
                     Grammar {isChecking ? '(Checking...)' : `(${errors.length})`}
                 </MenuButton>
+
+                <MenuDivider />
+
+                {/* Suggestions Button */}
+                <button
+                    onClick={() => setShowSuggestionPanel(!showSuggestionPanel)}
+                    className={`
+                        flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+                        ${showSuggestionPanel 
+                            ? 'bg-[#11A683] text-white' 
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}
+                    `}
+                >
+                    <Wand2 className="w-4 h-4" />
+                    Suggestions
+                    {(hasSpellingErrors || errors.length > 0) && (
+                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                            {errors.length + (hasSpellingErrors ? 1 : 0)}
+                        </span>
+                    )}
+                </button>
+
+                <MenuDivider />
+
+                {/* Save as PDF Control */}
+                {typeof window !== 'undefined' && (
+                    <SaveButton />
+                )}
             </div>
             
             <div className="relative">
@@ -228,36 +556,35 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                     className="min-h-[200px] [&_*]:spelling-error:underline [&_*]:spelling-error:decoration-red-500 [&_*]:spelling-error:decoration-wavy" 
                 />
                 
-                {/* Grammar Suggestions Panel */}
-                {showGrammarSuggestions && errors.length > 0 && (
-                    <div className="absolute right-0 top-0 w-64 bg-white border rounded-lg shadow-lg p-4 space-y-4">
-                        <h3 className="font-semibold text-sm">Grammar Suggestions</h3>
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                            {errors.map((error, index) => (
-                                <div 
-                                    key={`${error.offset}-${index}`} 
-                                    className="text-sm p-2 hover:bg-gray-50 rounded cursor-pointer"
-                                    onClick={() => setSelectedError(error)}
-                                >
-                                    <p className="text-red-600">{error.message}</p>
-                                    {selectedError === error && error.replacements.length > 0 && (
-                                        <div className="mt-2 space-y-1">
-                                            {error.replacements.slice(0, 3).map((replacement, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => applyGrammarSuggestion(replacement)}
-                                                    className="block w-full text-left px-2 py-1 text-sm hover:bg-blue-50 rounded"
-                                                >
-                                                    {replacement}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                {/* Profanity Warning */}
+                {hasProfanity && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-yellow-700">
+                            <AlertTriangle className="w-5 h-5" />
+                            <h3 className="font-medium">Inappropriate Content Detected</h3>
                         </div>
+                        <p className="mt-1 text-sm text-yellow-600">
+                            Please remove the following inappropriate words:
+                            <span className="font-medium"> {profanityWords.join(', ')}</span>
+                        </p>
                     </div>
                 )}
+
+                {/* Suggestion Panel */}
+                <SuggestionPanel />
+            </div>
+
+            {/* WordWise Footer */}
+            <div className="text-center mt-8 pt-6 border-t border-gray-100">
+                <div className="inline-flex items-center gap-1.5 relative group cursor-default">
+                    <span className="text-[#11A683] font-outfit text-lg font-semibold tracking-wide">
+                        Powered by{' '}
+                        <span className="bg-gradient-to-r from-[#11A683] to-[#15C39A] bg-clip-text text-transparent font-bold relative">
+                            WordWise
+                            <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-[#11A683] to-[#15C39A] transform scale-x-0 transition-transform group-hover:scale-x-100 duration-300"></span>
+                        </span>
+                    </span>
+                </div>
             </div>
         </div>
     );

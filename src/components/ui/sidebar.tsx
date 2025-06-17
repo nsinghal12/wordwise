@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Search,
@@ -9,10 +9,31 @@ import {
   Users,
   ChevronRight,
   ChevronDown,
+  History,
 } from "lucide-react"
+import { getBlogHistory, BlogHistoryItem } from "@/lib/blogHistory"
 
-export function Sidebar() {
+interface SidebarProps {
+  onHistoryItemClick?: (item: BlogHistoryItem) => void;
+}
+
+export function Sidebar({ onHistoryItemClick }: SidebarProps) {
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(true)
+  const [blogHistory, setBlogHistory] = useState<BlogHistoryItem[]>([])
+
+  useEffect(() => {
+    setBlogHistory(getBlogHistory())
+  }, [])
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -22,54 +43,42 @@ export function Sidebar() {
           <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-bold">
             v0
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm font-medium">Personal</span>
-            <span className="text-xs text-gray-500">Free</span>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
-          </div>
         </div>
         <Button className="w-full justify-start bg-gray-100 text-gray-700 hover:bg-gray-200">New Document</Button>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 p-4 space-y-2">
-        <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-          <Search className="w-4 h-4" />
-          Search
-        </div>
-        <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-          <FolderOpen className="w-4 h-4" />
-          Projects
-        </div>
-        <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-          <Clock className="w-4 h-4" />
-          Recents
-        </div>
-        <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-          <Users className="w-4 h-4" />
-          Community
-        </div>
+      <div className="flex-1 p-4 space-y-2 overflow-y-auto">
 
-        {/* Collapsible Sections */}
-        <div className="pt-4 space-y-2">
-          <div className="flex items-center justify-between px-2 py-1 text-sm text-gray-500">
-            <span>Favorite Projects</span>
-            <ChevronRight className="w-4 h-4" />
-          </div>
-          <div className="flex items-center justify-between px-2 py-1 text-sm text-gray-500">
-            <span>Favorite Chats</span>
-            <ChevronRight className="w-4 h-4" />
-          </div>
+        {/* Previous Blogs Section */}
+        <div className="pt-4">
           <div
             className="flex items-center justify-between px-2 py-1 text-sm text-gray-500 cursor-pointer"
-            onClick={() => setIsRecentsExpanded(!isRecentsExpanded)}
+            onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
           >
-            <span>Recents</span>
-            {isRecentsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              <span>Previous Blogs</span>
+            </div>
+            {isHistoryExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </div>
-          {isRecentsExpanded && (
-            <div className="px-4 py-2 text-sm text-gray-400">You haven't created any chats yet.</div>
+          {isHistoryExpanded && (
+            <div className="mt-2 space-y-1">
+              {blogHistory.length === 0 ? (
+                <div className="px-4 py-2 text-sm text-gray-400">No previous blogs yet.</div>
+              ) : (
+                blogHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md"
+                    onClick={() => onHistoryItemClick?.(item)}
+                  >
+                    <div className="truncate">{item.prompt}</div>
+                    <div className="text-xs text-gray-400 mt-1">{formatDate(item.timestamp)}</div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
         </div>
       </div>
