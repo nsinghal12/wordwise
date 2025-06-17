@@ -302,8 +302,8 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         const spellingSuggestions = selectedText ? getSpellingSuggestions(selectedText) : [];
 
         return (
-            <div className="fixed bottom-4 right-4 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-[#11A683] to-[#15C39A] p-3 text-white flex items-center justify-between">
+            <div className="w-80 bg-white border-l border-gray-200 h-[calc(100vh-6rem)] fixed right-0 top-24 overflow-y-auto shadow-lg">
+                <div className="bg-gradient-to-r from-[#11A683] to-[#15C39A] p-3 text-white flex items-center justify-between sticky top-0 z-10">
                     <div className="flex items-center gap-2">
                         <Wand2 className="w-5 h-5" />
                         <h3 className="font-medium">Writing Suggestions</h3>
@@ -396,7 +396,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     };
 
     return (
-        <div className="border rounded-xl p-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md">
+        <div className={`border rounded-xl p-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md ${showSuggestionPanel ? 'mr-80' : ''}`}>
             <div className="mb-4 border-b pb-3 flex flex-wrap items-center gap-y-2 sticky top-0 bg-white z-10">
                 {/* Text Style Controls */}
                 <MenuButton
