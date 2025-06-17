@@ -7,6 +7,7 @@ import { useGrammarCheck, GrammarError } from '../../lib/useGrammarCheck';
 import { Save, FileDown, Check, X, AlertTriangle, MessageSquare, Wand2 } from 'lucide-react';
 import { Filter } from 'bad-words';
 import Spellchecker from 'hunspell-spellchecker';
+import { getWordsForSpellCheck } from '@/lib/utils';
 
 const checker: any = new Spellchecker();
 
@@ -39,7 +40,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     const [spellChecker, setSpellChecker] = useState<Spellchecker | null>(null);
     const [hasProfanity, setHasProfanity] = useState(false);
     const [profanityWords, setProfanityWords] = useState<string[]>([]);
-    const filter = new Filter();
+    const profanityFilter = new Filter();
 
     // Initialize spellchecker
     useEffect(() => {
@@ -111,21 +112,32 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
             if (spellChecker) {
                 // Check for spelling errors
-                const words = text.split(/\s+/);
+                const words = getWordsForSpellCheck(text);
                 let position = 0;
                 const errors: SpellingError[] = [];
 
                 words.forEach(word => {
+                    if(!word || word.length === 0) {
+                        return;
+                    }
+
+                    // clean up the word
+                    word = word.replace(/[.,!?:;]+$/, '');
+
                     // Skip empty words, numbers, and URLs
-                    if (word && word.length > 0 &&
+                    if (// Skip numbers
                         !word.match(/^\d+$/) &&
-                        !word.match(/^https?:\/\//) &&
-                        !spellChecker.check(word)) {
-                        errors.push({
-                            word,
-                            start: position,
-                            length: word.length
-                        });
+
+                        // Skip URLs
+                        !word.match(/^https?:\/\//)
+                    ) {
+                        if (!spellChecker.check(word)) {
+                            errors.push({
+                                word,
+                                start: position,
+                                length: word.length
+                            });
+                        }
                     }
                     position += word.length + 1; // +1 for the space
                 });
@@ -142,7 +154,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
             // Check for profanity
             const words = text.split(/\s+/);
-            const profaneWords = words.filter(word => filter.isProfane(word));
+            const profaneWords = words.filter(word => profanityFilter.isProfane(word));
             setHasProfanity(profaneWords.length > 0);
             setProfanityWords(profaneWords);
         },
