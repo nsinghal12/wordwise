@@ -37,7 +37,31 @@ export async function POST(request: Request) {
     }
 
     // Create the blog writing prompt
-    const blogPrompt = `Write a blog post on the following topic and return the content in markdown format:\n\n${prompt}`;
+    const blogPrompt = `Write a blog post on "${prompt}" using markdown with this framework:
+
+1. **Title:** Create a 4-8 word viral-style title with power words and 1 emoji (e.g., "The Untold Truth About ${prompt} 🤯")
+   
+2. **Hook:** Open with 2 punchy sentences max that either:
+   - Ask a controversial question 
+   - Share a ridiculous personal fail 
+   - Drop an absurd statistic 
+   *(Include 1 relevant emoji)*
+
+3. **Body:** 
+   - Use 3-4 H2 sections with cheeky emoji-enhanced headers
+   - Mix self-deprecating humor + pop culture references
+   - Add 1 satirical metaphor per section ("Like a toddler with a chainsaw...")
+   - Include bullet points with 😂/💡/⚠️ emojis
+   - Bold key takeaways for skimmers
+
+4. **Tone:** 
+   - 85% witty friend + 15% snarky commentator
+   - 1-2 emojis per paragraph max
+   - Playful exaggeration ("This changed my life more than discovering avocado toast")
+
+5. **Close:** End with an interactive CTA/question that sparks debate ("Fight me in the comments if you disagree! 👊")
+
+Output ONLY raw markdown without explanations.`;
     
     // Call the LLM service
     const llmResponse = await invokeLLM(blogPrompt);

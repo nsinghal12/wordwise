@@ -8,13 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import WordWiseEditor from "@/components/editor/WordWiseEditor"
+import { Sidebar } from "@/components/ui/sidebar"
 import {
-  Search,
-  FolderOpen,
-  Clock,
-  Users,
-  ChevronRight,
-  ChevronDown,
   Camera,
   Upload,
   FileText,
@@ -23,24 +18,28 @@ import {
   ArrowUp,
   Paperclip,
   X,
+  ChevronDown,
 } from "lucide-react"
 import { createBlog } from "@/lib/blog"
 
 export default function Home() {
-  const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
   const [editorContent, setEditorContent] = useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
     const promptInput = document.getElementById('prompt-input') as HTMLInputElement;
-    if (promptInput?.value) {
+    if (promptInput?.value && !isSubmitting) {
       try {
+        setIsSubmitting(true);
         const content = await createBlog(promptInput.value);
         setEditorContent(content);
         setShowEditor(true);
       } catch (error) {
         console.error('Error submitting prompt:', error);
         // You might want to show an error message to the user here
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -48,65 +47,7 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 bg-black rounded text-white flex items-center justify-center text-xs font-bold">
-              v0
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium">Personal</span>
-              <span className="text-xs text-gray-500">Free</span>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </div>
-          </div>
-          <Button className="w-full justify-start bg-gray-100 text-gray-700 hover:bg-gray-200">New Dcoument</Button>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 p-4 space-y-2">
-          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-            <Search className="w-4 h-4" />
-            Search
-          </div>
-          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-            <FolderOpen className="w-4 h-4" />
-            Projects
-          </div>
-          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-            <Clock className="w-4 h-4" />
-            Recents
-          </div>
-          <div className="flex items-center gap-3 px-2 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md cursor-pointer">
-            <Users className="w-4 h-4" />
-            Community
-          </div>
-
-          {/* Collapsible Sections */}
-          <div className="pt-4 space-y-2">
-            <div className="flex items-center justify-between px-2 py-1 text-sm text-gray-500">
-              <span>Favorite Projects</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-            <div className="flex items-center justify-between px-2 py-1 text-sm text-gray-500">
-              <span>Favorite Chats</span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
-            <div
-              className="flex items-center justify-between px-2 py-1 text-sm text-gray-500 cursor-pointer"
-              onClick={() => setIsRecentsExpanded(!isRecentsExpanded)}
-            >
-              <span>Recents</span>
-              {isRecentsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </div>
-            {isRecentsExpanded && (
-              <div className="px-4 py-2 text-sm text-gray-400">You haven't created any chats yet.</div>
-            )}
-          </div>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -177,8 +118,18 @@ export default function Home() {
                       <Button variant="ghost" size="sm">
                         <Paperclip className="w-4 h-4" />
                       </Button>
-                      <Button id='submit-button' variant="ghost" size="sm" onClick={handleSubmit}>
-                        <ArrowUp className="w-4 h-4" />
+                      <Button 
+                        id='submit-button' 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent" />
+                        ) : (
+                          <ArrowUp className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
