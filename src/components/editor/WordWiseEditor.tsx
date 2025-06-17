@@ -41,7 +41,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     const [hasProfanity, setHasProfanity] = useState(false);
     const [profanityWords, setProfanityWords] = useState<string[]>([]);
     const profanityFilter = new Filter();
-    const spellCheckTimeoutRef = useRef<NodeJS.Timeout>();
+    const spellCheckTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     // Initialize spellchecker
     useEffect(() => {
