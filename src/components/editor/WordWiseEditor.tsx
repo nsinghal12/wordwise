@@ -302,66 +302,67 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         const spellingSuggestions = selectedText ? getSpellingSuggestions(selectedText) : [];
 
         return (
-            <div className="w-80 bg-white border-l border-gray-200 h-[calc(100vh-6rem)] fixed right-0 top-24 overflow-y-auto shadow-lg">
-                <div className="bg-gradient-to-r from-[#11A683] to-[#15C39A] p-3 text-white flex items-center justify-between sticky top-0 z-10">
-                    <div className="flex items-center gap-2">
-                        <Wand2 className="w-5 h-5" />
-                        <h3 className="font-medium">Writing Suggestions</h3>
+            <div className="w-64 bg-white border-l border-gray-200 h-screen fixed right-0 top-0 flex flex-col transition-transform duration-200 ease-in-out">
+                {/* Header */}
+                <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <Wand2 className="w-5 h-5 text-[#11A683]" />
+                            <h3 className="font-medium text-gray-900">Writing Suggestions</h3>
+                        </div>
+                        <button 
+                            onClick={() => setShowSuggestionPanel(false)}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
                     </div>
-                    <button 
-                        onClick={() => setShowSuggestionPanel(false)}
-                        className="text-white/80 hover:text-white transition-colors"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            
-                <div className="p-4 space-y-4">
                     {selectedText && (
-                        <div className="text-sm text-gray-500">
-                            Selected text: <span className="font-medium text-gray-700">{selectedText}</span>
+                        <div className="text-sm text-gray-500 bg-gray-50 p-2 rounded-md">
+                            Selected: <span className="font-medium text-gray-700">{selectedText}</span>
                         </div>
                     )}
-
+                </div>
+            
+                {/* Content */}
+                <div className="flex-1 p-4 space-y-4 overflow-y-auto">
                     {spellingSuggestions.length > 0 && (
-                        <div className="space-y-3">
-                            <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                                <Check className="w-4 h-4 text-[#11A683]" />
-                                Spelling Suggestions
-                            </h4>
-                            <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="space-y-1">
-                                    {spellingSuggestions.map((suggestion: string, idx: number) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => {
-                                                if (selectedRange) {
-                                                    applySuggestion(suggestion, selectedRange);
-                                                    setShowSuggestionPanel(false);
-                                                }
-                                            }}
-                                            className="block w-full text-left px-3 py-2 text-sm bg-white hover:bg-[#11A683] hover:text-white rounded-lg transition-colors"
-                                        >
-                                            {suggestion}
-                                        </button>
-                                    ))}
-                                </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-500">
+                                <Check className="w-4 h-4" />
+                                <span>Spelling Suggestions</span>
+                            </div>
+                            <div className="space-y-1">
+                                {spellingSuggestions.map((suggestion: string, idx: number) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => {
+                                            if (selectedRange) {
+                                                applySuggestion(suggestion, selectedRange);
+                                                setShowSuggestionPanel(false);
+                                            }
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md transition-colors"
+                                    >
+                                        {suggestion}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     )}
 
                     {relevantGrammarErrors.length > 0 && (
-                        <div className="space-y-3">
-                            <h4 className="font-medium text-gray-700 flex items-center gap-2">
-                                <MessageSquare className="w-4 h-4 text-[#11A683]" />
-                                Grammar Suggestions
-                            </h4>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-500">
+                                <MessageSquare className="w-4 h-4" />
+                                <span>Grammar Suggestions</span>
+                            </div>
                             {relevantGrammarErrors.map((error, index) => (
                                 <div 
                                     key={index}
-                                    className="bg-gray-50 rounded-lg p-3 space-y-2"
+                                    className="p-3 space-y-2 hover:bg-gray-50 rounded-md transition-colors"
                                 >
-                                    <p className="text-sm text-red-600">{error.message}</p>
+                                    <p className="text-sm text-red-600 px-1">{error.message}</p>
                                     <div className="space-y-1">
                                         {error.replacements.slice(0, 3).map((replacement, idx) => (
                                             <button
@@ -374,7 +375,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                                                     applySuggestion(replacement, range);
                                                     setShowSuggestionPanel(false);
                                                 }}
-                                                className="block w-full text-left px-3 py-2 text-sm bg-white hover:bg-[#11A683] hover:text-white rounded-lg transition-colors"
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md transition-colors"
                                             >
                                                 {replacement}
                                             </button>
@@ -386,8 +387,9 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                     )}
 
                     {!selectedText && relevantGrammarErrors.length === 0 && (
-                        <div className="text-center text-gray-500 py-4">
-                            Select text to see spelling suggestions or click on an underlined word
+                        <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 space-y-2">
+                            <Wand2 className="w-8 h-8 text-gray-400" />
+                            <p>Select text to see suggestions<br/>or click on an underlined word</p>
                         </div>
                     )}
                 </div>
@@ -396,7 +398,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     };
 
     return (
-        <div className={`border rounded-xl p-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md ${showSuggestionPanel ? 'mr-80' : ''}`}>
+        <div className={`border rounded-xl p-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md ${showSuggestionPanel ? 'mr-64' : ''}`}>
             <div className="mb-4 border-b pb-3 flex flex-wrap items-center gap-y-2 sticky top-0 bg-white z-10">
                 {/* Text Style Controls */}
                 <MenuButton
