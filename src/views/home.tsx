@@ -23,17 +23,18 @@ import { createBlog } from "@/lib/blog"
 import { BlogHistoryItem } from "@/lib/blogHistory"
 
 interface HomeProps {
-  onHistoryItemClick: (item: BlogHistoryItem) => void;
+  selectedHistoryItem?: BlogHistoryItem | null;
 }
 
-export default function Home({ onHistoryItemClick }: HomeProps) {
-  const [showEditor, setShowEditor] = useState(false)
-  const [editorContent, setEditorContent] = useState<string>('')
+export default function Home({ selectedHistoryItem }: HomeProps) {
+  const hasHistoryItem = selectedHistoryItem !== null;
+
+  const [showEditor, setShowEditor] = useState(hasHistoryItem ? true : false)
+  const [editorContent, setEditorContent] = useState<string>(hasHistoryItem ? selectedHistoryItem?.content || '' : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const promptInputRef = useRef<HTMLInputElement>(null)
+  const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
 
   const handleSubmit = async () => {
-    const promptValue = promptInputRef.current?.value;
     if (promptValue && !isSubmitting) {
       try {
         setIsSubmitting(true);
@@ -49,14 +50,9 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
     }
   };
 
-  const handleHistoryItemClickInternal = (item: BlogHistoryItem) => {
-    if (promptInputRef.current) {
-      promptInputRef.current.value = item.prompt;
-    }
-    setEditorContent(item.content);
-    setShowEditor(true);
-    onHistoryItemClick(item);
-  };
+  const setPromptValueHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPromptValue(e.target.value || '');
+  }
 
   return (
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
@@ -76,7 +72,8 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
           <div className="relative mb-8">
             <div className="border border-gray-200 rounded-xl p-6 bg-white hover:shadow-md transition-shadow">
               <Input
-                ref={promptInputRef}
+                value={hasHistoryItem ? selectedHistoryItem?.prompt : ''}
+                onChange={setPromptValueHandler}
                 placeholder="Ask WordWise to create..."
                 className="border-0 text-lg p-0 focus-visible:ring-0 placeholder-gray-400"
               />

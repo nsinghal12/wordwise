@@ -6,8 +6,10 @@ import Home from "@/views/home"
 import { BlogHistoryItem } from "@/lib/blogHistory"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/AuthContext"
+import { useState } from "react"
 
 export default function HomePage() {
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<BlogHistoryItem | null>(null)
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -20,7 +22,8 @@ export default function HomePage() {
 
   const handleHistoryItemClick = (item: BlogHistoryItem) => {
     // Handle history item clicks
-    console.log('History item clicked:', item)
+    // console.log('History item clicked in home page:', item)
+    setSelectedHistoryItem(item);
   }
 
   return (
@@ -34,8 +37,8 @@ export default function HomePage() {
         <Header />
 
         {/* Main Content Area */}
-        <Home onHistoryItemClick={handleHistoryItemClick} />
+        <Home selectedHistoryItem={selectedHistoryItem} />
       </div>
     </div>
   )
-} 
+}
