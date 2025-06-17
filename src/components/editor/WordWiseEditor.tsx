@@ -573,19 +573,6 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 {/* Suggestion Panel */}
                 <SuggestionPanel />
             </div>
-
-            {/* WordWise Footer */}
-            <div className="text-center mt-8 pt-6 border-t border-gray-100">
-                <div className="inline-flex items-center gap-1.5 relative group cursor-default">
-                    <span className="text-[#11A683] font-outfit text-lg font-semibold tracking-wide">
-                        Powered by{' '}
-                        <span className="bg-gradient-to-r from-[#11A683] to-[#15C39A] bg-clip-text text-transparent font-bold relative">
-                            WordWise
-                            <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-[#11A683] to-[#15C39A] transform scale-x-0 transition-transform group-hover:scale-x-100 duration-300"></span>
-                        </span>
-                    </span>
-                </div>
-            </div>
         </div>
     );
 };

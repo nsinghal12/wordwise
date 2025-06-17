@@ -62,7 +62,7 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
       <div className="w-full max-w-4xl">
         {/* Editor Section */}
-        {showEditor && (
+        {/* {showEditor && (
           <div className="transform transition-all duration-300 ease-in-out">
             <div className="bg-white rounded-xl shadow-lg p-6 mb-8 hover:shadow-xl transition-shadow">
               <div className="flex justify-between items-center mb-6">
@@ -79,7 +79,11 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
               <WordWiseEditor initialContent={editorContent} />
             </div>
           </div>
-        )}
+        )} */}
+
+        <div className="transform transition-all duration-300 ease-in-out">
+          <WordWiseEditor initialContent={editorContent} />
+        </div>
 
         {/* Input Section */}
         <div className="bg-white rounded-xl shadow-lg p-8 transition-all duration-300">
@@ -90,18 +94,18 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
           {/* Input Area */}
           <div className="relative mb-8">
             <div className="border border-gray-200 rounded-xl p-6 bg-white hover:shadow-md transition-shadow">
-              <Input 
+              <Input
                 ref={promptInputRef}
-                placeholder="Ask WordWise to create..." 
-                className="border-0 text-lg p-0 focus-visible:ring-0 placeholder-gray-400" 
+                placeholder="Ask WordWise to create..."
+                className="border-0 text-lg p-0 focus-visible:ring-0 placeholder-gray-400"
               />
               <div className="flex items-center justify-between mt-6">
                 <div className="flex items-center gap-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
                         New Project
@@ -114,9 +118,9 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
                   </DropdownMenu>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
                         v0-1.5-md
@@ -129,23 +133,23 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
                   </DropdownMenu>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     className="hover:bg-gray-50 rounded-full p-2 transition-colors"
                   >
                     <Share2 className="w-4 h-4 text-gray-600" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     className="hover:bg-gray-50 rounded-full p-2 transition-colors"
                   >
                     <Paperclip className="w-4 h-4 text-gray-600" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleSubmit}
                     disabled={isSubmitting}
                     className="hover:bg-gray-50 rounded-full p-2 transition-colors"
@@ -163,17 +167,17 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
 
           {/* Quick Actions */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors shadow-sm hover:shadow"
             >
               <Camera className="w-4 h-4 text-blue-500" />
               Clone a Screenshot
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors shadow-sm hover:shadow"
             >
               <div className="w-4 h-4 bg-purple-500 rounded text-white flex items-center justify-center text-xs">
@@ -181,25 +185,25 @@ export default function Home({ onHistoryItemClick }: HomeProps) {
               </div>
               Import from Figma
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors shadow-sm hover:shadow"
             >
               <Upload className="w-4 h-4 text-green-500" />
               Upload a Project
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors shadow-sm hover:shadow"
             >
               <FileText className="w-4 h-4 text-orange-500" />
               Landing Page
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors shadow-sm hover:shadow"
             >
               <UserPlus className="w-4 h-4 text-pink-500" />
