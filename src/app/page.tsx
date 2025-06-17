@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import WordWiseEditor from "@/components/editor/WordWiseEditor"
 import { Sidebar } from "@/components/ui/sidebar"
+import { Header } from "@/components/ui/header"
 import {
   Camera,
   Upload,
@@ -52,19 +53,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center gap-2">
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              Feedback
-            </Button>
-            <Avatar className="w-8 h-8">
-              <AvatarImage src="/placeholder-user.jpg" />
-              <AvatarFallback className="bg-green-500 text-white">U</AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
+        <Header />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col items-center justify-center p-8">
