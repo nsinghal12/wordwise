@@ -20,6 +20,7 @@
     "lucide-react": "^0.516.0",
     "marked": "^15.0.12",
     "next": "15.3.3",
+    "openai": "^5.5.1",
     "prosemirror-markdown": "^1.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
