@@ -6,15 +6,20 @@ import Home from "@/views/home"
 import { BlogHistoryItem } from "@/lib/blogHistory"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/AuthContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function HomePage() {
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<BlogHistoryItem | null>(null)
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
   if (!user) {
-    router.push('/login');
     return null;
   }
 
