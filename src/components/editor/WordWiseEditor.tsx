@@ -4,7 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { marked } from 'marked';
 import Alignment from '@tiptap/extension-text-align';
 import { useGrammarCheck, GrammarError } from '../../lib/useGrammarCheck';
-import { Save, FileDown, Check, X, AlertTriangle, MessageSquare, Wand2 } from 'lucide-react';
+import { Save, FileDown, Check, X, AlertTriangle, MessageSquare, Wand2, FileText } from 'lucide-react';
 import { Filter } from 'bad-words';
 import Spellchecker from 'hunspell-spellchecker';
 import { getWordsForSpellCheck } from '@/lib/utils';
@@ -335,18 +335,21 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
     // Custom Save Button Component
     const SaveButton = () => {
-        const isDisabled = hasSpellingErrors || errors.length > 0 || isGeneratingPDF || hasProfanity;
+        const isDisabled = isGeneratingPDF || hasProfanity;
         const getButtonText = () => {
             if (isGeneratingPDF) return 'Generating PDF...';
-            if (hasSpellingErrors) return 'Fix Spelling Errors';
-            if (errors.length > 0) return 'Fix Grammar Errors';
+            // if (hasSpellingErrors) return 'Fix Spelling Errors';
+            // if (errors.length > 0) return 'Fix Grammar Errors';
             if (hasProfanity) return 'Remove Inappropriate Words';
             return 'Save as PDF';
         };
 
         const getButtonIcon = () => {
             if (isGeneratingPDF) return <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />;
-            if (hasSpellingErrors || errors.length > 0 || hasProfanity) return <X className="w-4 h-4" />;
+            if (hasProfanity) {
+                return <X className="w-4 h-4" />;
+            }
+            
             return <FileDown className="w-4 h-4" />;
         };
 
@@ -365,12 +368,6 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             >
                 {getButtonIcon()}
                 <span>{getButtonText()}</span>
-                {!isDisabled && !isGeneratingPDF && (
-                    <div className="flex items-center gap-1 ml-2 text-xs bg-red-100 px-2 py-0.5 rounded-full">
-                        <Check className="w-3 h-3" />
-                        Ready
-                    </div>
-                )}
             </button>
         );
     };
@@ -619,22 +616,22 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 <MenuDivider />
 
                 {/* Spell Check Control */}
-                <MenuButton
+                {/* <MenuButton
                     onClick={toggleSpellCheck}
                     isActive={editor?.view.dom.spellcheck}
                 >
                     Spell Check
-                </MenuButton>
+                </MenuButton> */}
 
                 {/* Grammar Check Control */}
-                <MenuButton
+                {/* <MenuButton
                     onClick={() => setShowGrammarSuggestions(!showGrammarSuggestions)}
                     isActive={showGrammarSuggestions}
                 >
                     Grammar {isChecking ? '(Checking...)' : `(${errors.length})`}
-                </MenuButton>
+                </MenuButton> */}
 
-                <MenuDivider />
+                {/* <MenuDivider /> */}
 
                 {/* Suggestions Button */}
                 <button
