@@ -400,9 +400,9 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         });
 
         return (
-            <div className="w-64 bg-white border-l border-gray-200 h-screen fixed right-0 top-0 flex flex-col transition-transform duration-200 ease-in-out">
+            <div className="w-64 bg-white border-l border-gray-200 h-[calc(100vh-4rem)] overflow-y-auto">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-200">
+                <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                             <Wand2 className="w-5 h-5 text-[#11A683]" />
@@ -502,187 +502,189 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     };
 
     return (
-        <div className={`border rounded-xl p-4 shadow-sm bg-white transition-all duration-200 hover:shadow-md ${showSuggestionPanel ? 'mr-64' : ''}`}>
-            <div className="mb-4 border-b pb-3 flex flex-wrap items-center gap-y-2 sticky top-0 bg-white z-10">
-                {/* Text Style Controls */}
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                    isActive={editor?.isActive('bold')}
-                >
-                    Bold
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                    isActive={editor?.isActive('italic')}
-                >
-                    Italic
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleStrike().run()}
-                    isActive={editor?.isActive('strike')}
-                >
-                    Strike
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleCode().run()}
-                    isActive={editor?.isActive('code')}
-                >
-                    Code
-                </MenuButton>
+        <div className={`flex border rounded-xl shadow-sm bg-white transition-all duration-200 hover:shadow-md ${showSuggestionPanel ? 'mr-0' : ''}`}>
+            <div className="flex-1 p-4">
+                <div className="mb-4 border-b pb-3 flex flex-wrap items-center gap-y-2 sticky top-0 bg-white z-10">
+                    {/* Text Style Controls */}
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleBold().run()}
+                        isActive={editor?.isActive('bold')}
+                    >
+                        Bold
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleItalic().run()}
+                        isActive={editor?.isActive('italic')}
+                    >
+                        Italic
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleStrike().run()}
+                        isActive={editor?.isActive('strike')}
+                    >
+                        Strike
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleCode().run()}
+                        isActive={editor?.isActive('code')}
+                    >
+                        Code
+                    </MenuButton>
 
-                <MenuDivider />
+                    <MenuDivider />
 
-                {/* Heading Controls */}
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-                    isActive={editor?.isActive('heading', { level: 1 })}
-                >
-                    H1
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-                    isActive={editor?.isActive('heading', { level: 2 })}
-                >
-                    H2
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-                    isActive={editor?.isActive('heading', { level: 3 })}
-                >
-                    H3
-                </MenuButton>
+                    {/* Heading Controls */}
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                        isActive={editor?.isActive('heading', { level: 1 })}
+                    >
+                        H1
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                        isActive={editor?.isActive('heading', { level: 2 })}
+                    >
+                        H2
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+                        isActive={editor?.isActive('heading', { level: 3 })}
+                    >
+                        H3
+                    </MenuButton>
 
-                <MenuDivider />
+                    <MenuDivider />
 
-                {/* List Controls */}
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                    isActive={editor?.isActive('bulletList')}
-                >
-                    Bullet List
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                    isActive={editor?.isActive('orderedList')}
-                >
-                    Numbered List
-                </MenuButton>
+                    {/* List Controls */}
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                        isActive={editor?.isActive('bulletList')}
+                    >
+                        Bullet List
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                        isActive={editor?.isActive('orderedList')}
+                    >
+                        Numbered List
+                    </MenuButton>
 
-                <MenuDivider />
+                    <MenuDivider />
 
-                {/* Block Controls */}
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-                    isActive={editor?.isActive('blockquote')}
-                >
-                    Quote
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-                    isActive={editor?.isActive('codeBlock')}
-                >
-                    Code Block
-                </MenuButton>
+                    {/* Block Controls */}
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                        isActive={editor?.isActive('blockquote')}
+                    >
+                        Quote
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+                        isActive={editor?.isActive('codeBlock')}
+                    >
+                        Code Block
+                    </MenuButton>
 
-                <MenuDivider />
+                    <MenuDivider />
 
-                {/* Alignment Controls */}
-                <MenuButton
-                    onClick={() => editor?.chain().focus().setTextAlign('left').run()}
-                    isActive={editor?.isActive({ textAlign: 'left' })}
-                >
-                    Left
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().setTextAlign('center').run()}
-                    isActive={editor?.isActive({ textAlign: 'center' })}
-                >
-                    Center
-                </MenuButton>
-                <MenuButton
-                    onClick={() => editor?.chain().focus().setTextAlign('right').run()}
-                    isActive={editor?.isActive({ textAlign: 'right' })}
-                >
-                    Right
-                </MenuButton>
+                    {/* Alignment Controls */}
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                        isActive={editor?.isActive({ textAlign: 'left' })}
+                    >
+                        Left
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                        isActive={editor?.isActive({ textAlign: 'center' })}
+                    >
+                        Center
+                    </MenuButton>
+                    <MenuButton
+                        onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                        isActive={editor?.isActive({ textAlign: 'right' })}
+                    >
+                        Right
+                    </MenuButton>
 
-                <MenuDivider />
+                    <MenuDivider />
 
-                {/* Utility Controls */}
-                <MenuButton onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}>
-                    Clear Format
-                </MenuButton>
+                    {/* Utility Controls */}
+                    <MenuButton onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}>
+                        Clear Format
+                    </MenuButton>
 
-                <MenuDivider />
+                    <MenuDivider />
 
-                {/* Spell Check Control */}
-                {/* <MenuButton
-                    onClick={toggleSpellCheck}
-                    isActive={editor?.view.dom.spellcheck}
-                >
-                    Spell Check
-                </MenuButton> */}
+                    {/* Spell Check Control */}
+                    {/* <MenuButton
+                        onClick={toggleSpellCheck}
+                        isActive={editor?.view.dom.spellcheck}
+                    >
+                        Spell Check
+                    </MenuButton> */}
 
-                {/* Grammar Check Control */}
-                {/* <MenuButton
-                    onClick={() => setShowGrammarSuggestions(!showGrammarSuggestions)}
-                    isActive={showGrammarSuggestions}
-                >
-                    Grammar {isChecking ? '(Checking...)' : `(${errors.length})`}
-                </MenuButton> */}
+                    {/* Grammar Check Control */}
+                    {/* <MenuButton
+                        onClick={() => setShowGrammarSuggestions(!showGrammarSuggestions)}
+                        isActive={showGrammarSuggestions}
+                    >
+                        Grammar {isChecking ? '(Checking...)' : `(${errors.length})`}
+                    </MenuButton> */}
 
-                {/* <MenuDivider /> */}
+                    {/* <MenuDivider /> */}
 
-                {/* Suggestions Button */}
-                <button
-                    onClick={() => setShowSuggestionPanel(!showSuggestionPanel)}
-                    className={`
-                        flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
-                        ${showSuggestionPanel
-                            ? 'bg-[#11A683] text-white'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}
-                    `}
-                >
-                    <Wand2 className="w-4 h-4" />
-                    Suggestions
-                    {(hasSpellingErrors || errors.length > 0) && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                            {(errors.length + spellingErrors.length)}
-                        </span>
+                    {/* Suggestions Button */}
+                    <button
+                        onClick={() => setShowSuggestionPanel(!showSuggestionPanel)}
+                        className={`
+                            flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+                            ${showSuggestionPanel
+                                ? 'bg-[#11A683] text-white'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}
+                        `}
+                    >
+                        <Wand2 className="w-4 h-4" />
+                        Suggestions
+                        {(hasSpellingErrors || errors.length > 0) && (
+                            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                {(errors.length + spellingErrors.length)}
+                            </span>
+                        )}
+                    </button>
+
+                    <MenuDivider />
+
+                    {/* Save as PDF Control */}
+                    {typeof window !== 'undefined' && (
+                        <SaveButton />
                     )}
-                </button>
+                </div>
 
-                <MenuDivider />
+                <div className="relative">
+                    <EditorContent
+                        editor={editor}
+                        className="min-h-[200px] [&_*]:spelling-error:underline [&_*]:spelling-error:decoration-red-500 [&_*]:spelling-error:decoration-wavy"
+                    />
 
-                {/* Save as PDF Control */}
-                {typeof window !== 'undefined' && (
-                    <SaveButton />
-                )}
-            </div>
-
-            <div className="relative">
-                <EditorContent
-                    editor={editor}
-                    className="min-h-[200px] [&_*]:spelling-error:underline [&_*]:spelling-error:decoration-red-500 [&_*]:spelling-error:decoration-wavy"
-                />
-
-                {/* Profanity Warning */}
-                {hasProfanity && (
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-yellow-700">
-                            <AlertTriangle className="w-5 h-5" />
-                            <h3 className="font-medium">Inappropriate Content Detected</h3>
+                    {/* Profanity Warning */}
+                    {hasProfanity && (
+                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-yellow-700">
+                                <AlertTriangle className="w-5 h-5" />
+                                <h3 className="font-medium">Inappropriate Content Detected</h3>
+                            </div>
+                            <p className="mt-1 text-sm text-yellow-600">
+                                Please remove the following inappropriate words:
+                                <span className="font-medium"> {profanityWords.join(', ')}</span>
+                            </p>
                         </div>
-                        <p className="mt-1 text-sm text-yellow-600">
-                            Please remove the following inappropriate words:
-                            <span className="font-medium"> {profanityWords.join(', ')}</span>
-                        </p>
-                    </div>
-                )}
-
-                {/* Suggestion Panel */}
-                <SuggestionPanel />
+                    )}
+                </div>
             </div>
+
+            {/* Suggestion Panel */}
+            {showSuggestionPanel && <SuggestionPanel />}
         </div>
     );
 };
