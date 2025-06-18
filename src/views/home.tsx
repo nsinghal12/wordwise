@@ -80,7 +80,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
           <div className="relative mb-8">
             <div className="border border-gray-200 rounded-xl p-6 bg-white hover:shadow-md transition-shadow">
               <Input
-                value={hasHistoryItem ? selectedHistoryItem?.prompt : ''}
+                value={promptValue}
                 onChange={setPromptValueHandler}
                 placeholder="Ask WordWise to create..."
                 className="border-0 text-lg p-0 focus-visible:ring-0 placeholder-gray-400"

@@ -70,62 +70,9 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         loadDictionary();
     }, []);
 
-    // Spell check function wrapped in useCallback
-    const performSpellCheck = useCallback((text: string) => {
-        if (!spellChecker) return;
-
-        // Run spell check in a non-blocking way using a Promise
-        Promise.resolve().then(() => {
-            const words = getWordsForSpellCheck(text);
-            let position = 0;
-            const errors: SpellingError[] = [];
-
-            words.forEach(word => {
-                if(!word || word.length === 0) {
-                    return;
-                }
-
-                // clean up the word
-                word = word.replace(/[.,!?:;]+$/, '');
-
-                // Skip empty words, numbers, and URLs
-                if (!word.match(/^\d+$/) && !word.match(/^https?:\/\//)) {
-                    if (!spellChecker.check(word)) {
-                        errors.push({
-                            word,
-                            start: position,
-                            length: word.length
-                        });
-                    }
-                }
-                position += word.length + 1; // +1 for the space
-            });
-
-            setSpellingErrors(errors);
-            setHasSpellingErrors(errors.length > 0);
-
-            const profaneWords = words.filter(word => profanityFilter.isProfane(word));
-            setHasProfanity(profaneWords.length > 0);
-            setProfanityWords(profaneWords);
-
-
-            // Automatically show suggestions panel if there are errors
-            if (errors.length > 0) {
-                setShowSuggestionPanel(true);
-            }
-        });
-    }, [spellChecker, setSpellingErrors, setHasSpellingErrors, setShowSuggestionPanel]);
-
-    // Debounced spell check
-    const debouncedSpellCheck = useCallback((text: string) => {
-        if (spellCheckTimeoutRef.current) {
-            clearTimeout(spellCheckTimeoutRef.current);
-        }
-
-        spellCheckTimeoutRef.current = setTimeout(() => {
-            performSpellCheck(text);
-        }, 500); // 500ms debounce delay
-    }, [performSpellCheck, spellCheckTimeoutRef]);
+    // Placeholder for spell check functions - will be defined after editor
+    let performSpellCheck: (text: string) => void;
+    let debouncedSpellCheck: (text: string) => void;
 
     const editor = useEditor({
         extensions: [
@@ -142,38 +89,102 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 autocorrect: spellCheck ? 'on' : 'off',
             },
             handleClick(view, pos, event) {
-                const { from, to } = view.state.selection;
-                const selectedText = view.state.doc.textBetween(from, to);
-                setSelectedText(selectedText);
-                setSelectedRange({ from, to });
-
-                // Check if clicked on a misspelled word
-                if (!selectedText && event.target instanceof HTMLElement) {
-                    const element = event.target;
-                    if (element.classList.contains('spelling-error')) {
-                        const word = element.textContent || '';
+                if (event.target instanceof HTMLElement && event.target.classList.contains('spelling-error')) {
+                    const word = event.target.textContent || '';
+                    
+                    // Find the spelling error that matches this word and position
+                    const matchingError = spellingErrors.find(error => {
+                        const errorText = view.state.doc.textBetween(error.start + 1, error.start + 1 + error.length);
+                        return errorText === word && pos >= error.start + 1 && pos <= error.start + 1 + error.length;
+                    });
+                    
+                    if (matchingError) {
                         setSelectedText(word);
-                        // Find the position of this word in the document
-                        const parent = element.parentElement;
-                        if (parent) {
-                            const offset = Array.from(parent.childNodes).indexOf(element);
-                            setSelectedRange({ from: pos - word.length, to: pos });
-                        }
+                        setSelectedRange({ 
+                            from: matchingError.start + 1, 
+                            to: matchingError.start + 1 + matchingError.length 
+                        });
+                    }
+                } else {
+                    const { from, to } = view.state.selection;
+                    const selectedText = view.state.doc.textBetween(from, to);
+                    if (selectedText) {
+                        setSelectedText(selectedText);
+                        setSelectedRange({ from, to });
                     }
                 }
                 return false;
             },
         },
         onUpdate: ({ editor }) => {
-            const text = editor.getText();
-            setContent(text);
-
-            // Use debounced spell check instead of immediate check
-            if (spellChecker) {
-                debouncedSpellCheck(text);
+            const newText = editor.getText();
+            // Only update content and run spell check if the text has actually changed
+            if (newText !== content) {
+                setContent(newText);
             }
         },
     });
+
+    // Spell check function wrapped in useCallback
+    performSpellCheck = useCallback((text: string) => {
+        if (!spellChecker || !editor) return;
+
+        // Run spell check in a non-blocking way using a Promise
+        Promise.resolve().then(() => {
+            const doc = editor.state.doc;
+            const errors: SpellingError[] = [];
+            
+            // Walk through the document and find misspelled words
+            doc.descendants((node, pos) => {
+                if (node.isText && node.text) {
+                    const words = node.text.match(/\b\w+\b/g);
+                    if (words) {
+                        let offset = 0;
+                        words.forEach(word => {
+                            const wordIndex = node.text!.indexOf(word, offset);
+                            if (wordIndex !== -1) {
+                                // Skip numbers and URLs
+                                if (!word.match(/^\d+$/) && !word.match(/^https?:\/\//)) {
+                                    if (!spellChecker.check(word)) {
+                                        errors.push({
+                                            word,
+                                            start: pos + wordIndex,
+                                            length: word.length
+                                        });
+                                    }
+                                }
+                                offset = wordIndex + word.length;
+                            }
+                        });
+                    }
+                }
+            });
+
+            setSpellingErrors(errors);
+            setHasSpellingErrors(errors.length > 0);
+
+            const words = getWordsForSpellCheck(text);
+            const profaneWords = words.filter(word => profanityFilter.isProfane(word));
+            setHasProfanity(profaneWords.length > 0);
+            setProfanityWords(profaneWords);
+
+            // Automatically show suggestions panel if there are errors
+            if (errors.length > 0) {
+                setShowSuggestionPanel(true);
+            }
+        });
+    }, [spellChecker, editor, setSpellingErrors, setHasSpellingErrors, setShowSuggestionPanel]);
+
+    // Debounced spell check
+    debouncedSpellCheck = useCallback((text: string) => {
+        if (spellCheckTimeoutRef.current) {
+            clearTimeout(spellCheckTimeoutRef.current);
+        }
+
+        spellCheckTimeoutRef.current = setTimeout(() => {
+            performSpellCheck(text);
+        }, 500); // 500ms debounce delay
+    }, [performSpellCheck, spellCheckTimeoutRef]);
 
     const { errors, isChecking } = useGrammarCheck({
         text: content,
@@ -195,6 +206,13 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             editor.commands.setContent(htmlContent);
         }
     }, [editor, initialContent]);
+
+    // Trigger spell check when content changes
+    useEffect(() => {
+        if (content && debouncedSpellCheck) {
+            debouncedSpellCheck(content);
+        }
+    }, [content, debouncedSpellCheck]);
 
     // Save as PDF function
     const saveAsPDF = useCallback(async () => {
@@ -261,12 +279,23 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
     // Function to apply a suggestion
     const applySuggestion = useCallback((replacement: string, range: { from: number; to: number }) => {
-        if (editor) {
-            editor
-                .chain()
-                .focus()
-                .insertContentAt(range, replacement)
-                .run();
+        if (editor && range) {
+            // Create a text node with the replacement
+            const text = editor.schema.text(replacement);
+            
+            // Create and dispatch the transaction
+            editor.view.dispatch(
+                editor.view.state.tr
+                    .deleteRange(range.from, range.to)
+                    .insert(range.from, text)
+            );
+            
+            // Clear the selection after applying the suggestion
+            setSelectedText('');
+            setSelectedRange(null);
+            
+            // Ensure the editor keeps focus
+            editor.commands.focus();
         }
     }, [editor]);
 
