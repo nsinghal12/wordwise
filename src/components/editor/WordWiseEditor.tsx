@@ -647,7 +647,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                     Suggestions
                     {(hasSpellingErrors || errors.length > 0) && (
                         <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                            {errors.length}
+                            {(errors.length + spellingErrors.length)}
                         </span>
                     )}
                 </button>
