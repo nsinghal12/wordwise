@@ -91,17 +91,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Use popup for development, redirect for production
       const isDevelopment = process.env.NODE_ENV === 'development';
       
-      if (isDevelopment) {
+      // if (isDevelopment) {
         // Use popup authentication for local development
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
           await setAuthCookie(result.user);
           router.push('/home');
         }
-      } else {
-        // Use redirect authentication for production
-        await signInWithRedirect(auth, provider);
-      }
+      // } else {
+      //   // Use redirect authentication for production
+      //   await signInWithRedirect(auth, provider);
+      // }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       setLoading(false);
