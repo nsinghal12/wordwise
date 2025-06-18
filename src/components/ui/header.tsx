@@ -9,9 +9,9 @@ export function Header() {
       <div className="flex items-center gap-2">
       </div>
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm">
+        {/* <Button variant="outline" size="sm">
           Feedback
-        </Button>
+        </Button> */}
         <Avatar className="w-8 h-8">
           <AvatarImage src="/placeholder-user.jpg" />
           <AvatarFallback className="bg-green-500 text-white">U</AvatarFallback>
