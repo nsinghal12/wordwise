@@ -3,9 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { 
   GoogleAuthProvider, 
-  signInWithRedirect,
   signInWithPopup,
-  getRedirectResult,
   signOut, 
   onAuthStateChanged, 
   User 
@@ -49,26 +47,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        console.log('Redirect result:', result?.user ? 'User exists' : 'No user');
-        if (result?.user) {
-          await setAuthCookie(result.user);
-          setUser(result.user);
-          router.push('/home');
-        }
-      } catch (error) {
-        console.error('Error handling redirect result:', error);
-      }
-    };
-
-    // Handle redirect result only in production (when using signInWithRedirect)
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    if (!isDevelopment) {
-      handleRedirectResult();
-    }
-
     // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('Auth state changed:', user ? 'User exists' : 'No user');
@@ -88,20 +66,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         prompt: 'select_account'
       });
       
-      // Use popup for development, redirect for production
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      
-      // if (isDevelopment) {
-        // Use popup authentication for local development
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          await setAuthCookie(result.user);
-          router.push('/home');
-        }
-      // } else {
-      //   // Use redirect authentication for production
-      //   await signInWithRedirect(auth, provider);
-      // }
+      // Use popup authentication
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        await setAuthCookie(result.user);
+        router.push('/home');
+      }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       setLoading(false);
