@@ -9,15 +9,15 @@ export function middleware(request: NextRequest) {
   console.log('Middleware - Auth token exists:', !!authToken);
 
   // Public paths that don't require authentication
-  const publicPaths = ['/login'];
+  const publicPaths = ['/'];
   
   // If the path is public, allow access
   if (publicPaths.includes(pathname)) {
     // If user has auth token and tries to access login, redirect to home
-    if (authToken && pathname === '/login') {
-      console.log('Middleware - Redirecting authenticated user from login to home');
-      return NextResponse.redirect(new URL('/home', request.url));
-    }
+    // if (authToken && pathname === '/login') {
+    //   console.log('Middleware - Redirecting authenticated user from login to home');
+    //   return NextResponse.redirect(new URL('/home', request.url));
+    // }
     console.log('Middleware - Allowing access to public path');
     return NextResponse.next();
   }
@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
   // For all other paths, require authentication
   if (!authToken) {
     console.log('Middleware - No auth token, redirecting to login');
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   console.log('Middleware - Auth token found, allowing access');
