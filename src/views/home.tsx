@@ -66,12 +66,12 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
       <div className="w-full max-w-4xl">
 
-        <div className="transform transition-all duration-300 ease-in-out pb-8">
+        <div id='editor'className="transform transition-all duration-300 ease-in-out pb-8">
           <WordWiseEditor initialContent={editorContent} />
         </div>
 
         {/* Input Section */}
-        <div className="bg-white rounded-xl shadow-lg p-8 transition-all duration-300">
+        <div id='prompt-section' className="bg-white rounded-xl shadow-lg p-8 transition-all duration-300">
           <h1 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             What can I help you create?
           </h1>
@@ -119,7 +119,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
                   </DropdownMenu>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button
+                  {/* <Button
                     variant="ghost"
                     size="sm"
                     className="hover:bg-gray-50 rounded-full p-2 transition-colors"
@@ -132,7 +132,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
                     className="hover:bg-gray-50 rounded-full p-2 transition-colors"
                   >
                     <Paperclip className="w-4 h-4 text-gray-600" />
-                  </Button>
+                  </Button> */}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -152,7 +152,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
+          {/* <div className="flex flex-wrap justify-center gap-3 mb-12">
             <Button
               variant="outline"
               size="sm"
@@ -195,10 +195,10 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
               <UserPlus className="w-4 h-4 text-pink-500" />
               Invite Team
             </Button>
-          </div>
+          </div> */}
 
           {/* Example Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="bg-white hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -229,7 +229,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
