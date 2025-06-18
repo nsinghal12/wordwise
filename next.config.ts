@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  trailingSlash: false,
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Client-side polyfills
