@@ -278,24 +278,38 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     }, [editor, selectedError]);
 
     // Function to apply a suggestion
-    const applySuggestion = useCallback((replacement: string, range: { from: number; to: number }) => {
+    const applySuggestion = useCallback((replacement: string, range: { from: number; to: number }, isGrammar: boolean = false) => {
         if (editor && range) {
-            // Create a text node with the replacement
-            const text = editor.schema.text(replacement);
+            // Clean the replacement text to remove any unwanted characters
+            const cleanReplacement = replacement.replace(/[\r\n]/g, '').trim();
             
-            // Create and dispatch the transaction
-            editor.view.dispatch(
-                editor.view.state.tr
-                    .deleteRange(range.from, range.to)
-                    .insert(range.from, text)
-            );
+            if (isGrammar) {
+                // For grammar suggestions, we need to adjust the range for Tiptap's document structure
+                // LanguageTool gives us plain text offsets, but Tiptap uses document positions
+                const adjustedFrom = range.from + 1; // Add 1 to account for document structure
+                const adjustedTo = range.to + 1;
+                
+                editor
+                    .chain()
+                    .focus()
+                    .setTextSelection({ from: adjustedFrom, to: adjustedTo })
+                    .deleteSelection()
+                    .insertContent(cleanReplacement)
+                    .run();
+            } else {
+                // For spelling suggestions, the range is already calculated correctly from our spell checker
+                editor
+                    .chain()
+                    .focus()
+                    .setTextSelection({ from: range.from, to: range.to })
+                    .deleteSelection()
+                    .insertContent(cleanReplacement)
+                    .run();
+            }
             
             // Clear the selection after applying the suggestion
             setSelectedText('');
             setSelectedRange(null);
-            
-            // Ensure the editor keeps focus
-            editor.commands.focus();
         }
     }, [editor]);
 
@@ -466,7 +480,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                                                         from: error.offset,
                                                         to: error.offset + error.length
                                                     };
-                                                    applySuggestion(replacement, range);
+                                                    applySuggestion(replacement, range, true);
                                                 }}
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md transition-colors"
                                             >
