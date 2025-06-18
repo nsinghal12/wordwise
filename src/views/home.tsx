@@ -66,7 +66,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
       <div className="w-full max-w-4xl">
 
-        <div id='editor'className="transform transition-all duration-300 ease-in-out pb-8">
+        <div id='editor' className="transform transition-all duration-300 ease-in-out pb-8">
           <WordWiseEditor initialContent={editorContent} />
         </div>
 
@@ -80,14 +80,21 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
           <div className="relative mb-8">
             <div className="border border-gray-200 rounded-xl p-6 bg-white hover:shadow-md transition-shadow">
               <Input
+                id='prompt-input'
                 value={promptValue}
                 onChange={setPromptValueHandler}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
                 placeholder="Ask WordWise to create..."
                 className="border-0 text-lg p-0 focus-visible:ring-0 placeholder-gray-400"
               />
               <div className="flex items-center justify-between mt-6">
                 <div className="flex items-center gap-3">
-                  <DropdownMenu>
+                  {/* <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
@@ -116,7 +123,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
                     <DropdownMenuContent>
                       <DropdownMenuItem>v0-1.5-md</DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu>
+                  </DropdownMenu> */}
                 </div>
                 <div className="flex items-center gap-3">
                   {/* <Button
@@ -134,6 +141,7 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
                     <Paperclip className="w-4 h-4 text-gray-600" />
                   </Button> */}
                   <Button
+                    id='submit-button'
                     variant="ghost"
                     size="sm"
                     onClick={handleSubmit}
