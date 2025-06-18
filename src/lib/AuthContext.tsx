@@ -9,7 +9,6 @@ import {
   User 
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
@@ -44,7 +43,6 @@ const setAuthCookie = async (user: User | null) => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     // Set up auth state listener
@@ -56,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const signInWithGoogle = async () => {
     try {
@@ -70,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
         await setAuthCookie(result.user);
-        router.push('/home');
+        console.log('Sign in successful, user:', result.user.email);
       }
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -82,7 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await signOut(auth);
       await setAuthCookie(null);
-      router.push('/login');
+      console.log('User logged out');
     } catch (error) {
       console.error('Error signing out:', error);
     }

@@ -1,40 +1,60 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
 import { Sidebar } from "@/components/ui/sidebar"
 import { Header } from "@/components/ui/header"
 import Home from "@/views/home"
+import LoginView from "@/views/login"
 import { BlogHistoryItem } from "@/lib/blogHistory"
+import { useAuth } from "@/lib/AuthContext"
 
 export default function App() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const [currentRoute, setCurrentRoute] = useState('/')
+  const { user, loading } = useAuth();
+  const [currentRoute, setCurrentRoute] = useState('/');
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<BlogHistoryItem | null>(null);
 
+  // Set initial route based on user state
   useEffect(() => {
-    setCurrentRoute(pathname)
-  }, [pathname])
+    if (!loading) {
+      if (user) {
+        setCurrentRoute('/home');
+      } else {
+        setCurrentRoute('/login');
+      }
+    }
+  }, [user, loading]);
+
+  const handleLoginSuccess = () => {
+    console.log('Login successful, navigating to home');
+    setCurrentRoute('/home');
+  };
+
+  const handleLogout = () => {
+    console.log('Logout successful, navigating to login');
+    setCurrentRoute('/login');
+    setSelectedHistoryItem(null); // Clear any selected items
+  };
 
   const handleHistoryItemClick = (item: BlogHistoryItem) => {
-    // Handle history item clicks
-    console.log('History item clicked:', item)
+    console.log('History item clicked:', item);
+    setSelectedHistoryItem(item);
+  };
+
+  // Show loading while determining auth state
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
-  const handleNavigation = (route: string) => {
-    router.push(route)
+  // Show login view if no user
+  if (!user || currentRoute === '/login') {
+    return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const renderContent = () => {
-    switch (currentRoute) {
-      case '/':
-      case '/home':
-        return <Home />
-      default:
-        return <Home />
-    }
-  }
-
+  // Show home view with sidebar and header
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar */}
@@ -43,11 +63,11 @@ export default function App() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Header */}
-        <Header />
+        <Header onLogout={handleLogout} />
 
         {/* Main Content Area */}
-        {renderContent()}
+        <Home selectedHistoryItem={selectedHistoryItem} />
       </div>
     </div>
-  )
+  );
 }

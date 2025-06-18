@@ -11,11 +11,20 @@ import {
 import { useAuth } from "@/lib/AuthContext"
 import { LogOut } from "lucide-react"
 
-export function Header() {
+interface HeaderProps {
+  onLogout?: () => void;
+}
+
+export function Header({ onLogout }: HeaderProps) {
   const { logout, user } = useAuth();
 
   const handleSignOut = async () => {
-    await logout();
+    try {
+      await logout();
+      onLogout?.();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
