@@ -21,8 +21,10 @@ import {
   MoreVertical,
   Copy,
   Trash2,
+  FileDown,
 } from "lucide-react"
 import { getBlogHistory, BlogHistoryItem } from "@/lib/blogHistory"
+import html2pdf from 'html2pdf.js'
 
 interface SidebarProps {
   onHistoryItemClick?: (item: BlogHistoryItem) => void;
@@ -46,6 +48,8 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
   const [isLoading, setIsLoading] = useState(true)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<BlogHistoryItem | null>(null)
+  const [showPdfDialog, setShowPdfDialog] = useState(false)
+  const [pdfGenerationProgress, setPdfGenerationProgress] = useState<string>('')
 
   const loadBlogHistory = async () => {
     try {
@@ -121,6 +125,160 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
   const handleDeleteCancel = () => {
     setShowDeleteDialog(false);
     setItemToDelete(null);
+  };
+
+  const handleSavePdf = async (item: BlogHistoryItem) => {
+    setShowPdfDialog(true);
+    setPdfGenerationProgress('Preparing document...');
+
+    try {
+      // Give UI time to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Create a temporary container that's visible but positioned off-screen
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.top = '0';
+      tempContainer.style.left = '-100%';
+      tempContainer.style.width = '210mm';
+      tempContainer.style.minHeight = '297mm';
+      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.padding = '20mm';
+      tempContainer.style.fontFamily = 'Arial, sans-serif';
+      tempContainer.style.fontSize = '12pt';
+      tempContainer.style.lineHeight = '1.6';
+      tempContainer.style.color = 'black';
+      tempContainer.style.zIndex = '-1';
+      tempContainer.style.overflow = 'hidden';
+      
+      // Create content elements programmatically for better reliability
+      const contentWrapper = document.createElement('div');
+      contentWrapper.style.width = '100%';
+      
+      // Title
+      const titleElement = document.createElement('h1');
+      titleElement.textContent = item.title;
+      titleElement.style.fontSize = '24pt';
+      titleElement.style.margin = '0 0 20pt 0';
+      titleElement.style.color = '#333';
+      titleElement.style.borderBottom = '2pt solid #333';
+      titleElement.style.paddingBottom = '10pt';
+      titleElement.style.fontWeight = 'bold';
+      
+      // Prompt section
+      const promptWrapper = document.createElement('div');
+      promptWrapper.style.margin = '20pt 0';
+      promptWrapper.style.padding = '15pt';
+      promptWrapper.style.backgroundColor = '#f5f5f5';
+      promptWrapper.style.border = '1pt solid #ddd';
+      
+      const promptTitle = document.createElement('h3');
+      promptTitle.textContent = 'Original Prompt:';
+      promptTitle.style.margin = '0 0 10pt 0';
+      promptTitle.style.color = '#666';
+      promptTitle.style.fontSize = '14pt';
+      
+      const promptText = document.createElement('p');
+      promptText.textContent = item.prompt;
+      promptText.style.margin = '0';
+      promptText.style.fontStyle = 'italic';
+      promptText.style.color = '#555';
+      
+      promptWrapper.appendChild(promptTitle);
+      promptWrapper.appendChild(promptText);
+      
+      // Content section
+      const contentSection = document.createElement('div');
+      contentSection.style.margin = '20pt 0';
+      contentSection.style.lineHeight = '1.8';
+      
+      // Split content into paragraphs and create elements
+      const paragraphs = item.content.split('\n').filter(p => p.trim());
+      paragraphs.forEach(paragraphText => {
+        const p = document.createElement('p');
+        p.textContent = paragraphText.trim();
+        p.style.margin = '0 0 12pt 0';
+        p.style.textAlign = 'justify';
+        contentSection.appendChild(p);
+      });
+      
+      // Footer
+      const footer = document.createElement('div');
+      footer.textContent = `Generated on ${new Date(item.timestamp).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
+      footer.style.marginTop = '30pt';
+      footer.style.paddingTop = '15pt';
+      footer.style.borderTop = '1pt solid #ccc';
+      footer.style.fontSize = '10pt';
+      footer.style.color = '#888';
+      footer.style.textAlign = 'center';
+      
+      // Assemble the document
+      contentWrapper.appendChild(titleElement);
+      contentWrapper.appendChild(promptWrapper);
+      contentWrapper.appendChild(contentSection);
+      contentWrapper.appendChild(footer);
+      tempContainer.appendChild(contentWrapper);
+      
+      document.body.appendChild(tempContainer);
+
+      // Wait for content to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setPdfGenerationProgress('Rendering content...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Configure html2pdf options with simpler settings
+      const cleanFilename = item.title.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').toLowerCase();
+      const options = {
+        margin: 0,
+        filename: `${cleanFilename}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { 
+          scale: 1,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: 'white'
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait' 
+        }
+      };
+
+      setPdfGenerationProgress('Converting to PDF...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log('Container content before PDF generation:', tempContainer.innerHTML);
+
+      // Generate and save PDF
+      await html2pdf().set(options).from(tempContainer).save();
+
+      setPdfGenerationProgress('PDF saved successfully!');
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+      
+      // Close dialog after a short delay
+      setTimeout(() => {
+        setShowPdfDialog(false);
+        setPdfGenerationProgress('');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setPdfGenerationProgress('Error generating PDF. Please try again.');
+      setTimeout(() => {
+        setShowPdfDialog(false);
+        setPdfGenerationProgress('');
+      }, 3000);
+    }
   };
 
   // Expose functions via ref
@@ -228,6 +386,13 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                                 <Copy className="w-4 h-4 mr-2" />
                                 Make a copy
                               </DropdownMenuItem>
+                              {/* <DropdownMenuItem 
+                                className="cursor-pointer"
+                                onClick={() => handleSavePdf(item)}
+                              >
+                                <FileDown className="w-4 h-4 mr-2" />
+                                Save as PDF
+                              </DropdownMenuItem> */}
                               <DropdownMenuItem 
                                 variant="destructive" 
                                 className="cursor-pointer"
@@ -287,6 +452,18 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
             Delete
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* PDF Generation Progress Dialog */}
+      <Dialog
+        isOpen={showPdfDialog}
+        onClose={() => {}} // Prevent manual closing during generation
+        title="Generating PDF"
+      >
+        <div className="flex items-center gap-3 py-4">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+          <p className="text-gray-600">{pdfGenerationProgress}</p>
+        </div>
       </Dialog>
     </div>
   )
