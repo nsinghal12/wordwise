@@ -258,7 +258,7 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
         {/* Input Section */}
         <div id='prompt-section' className="bg-white rounded-xl shadow-lg p-8 transition-all duration-300">
           <h1 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            What can I help you create?
+            What can I help you generate?
           </h1>
 
           {/* Input Area */}

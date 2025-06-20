@@ -191,6 +191,11 @@
     @apply text-gray-700 leading-relaxed;
   }
   
+  /* Fix for paragraphs inside list items */
+  .wordwise-editor li p {
+    @apply mb-0 inline;
+  }
+  
   .wordwise-editor ul ul, .wordwise-editor ol ol {
     @apply mt-1 mb-0 ml-6;
   }
