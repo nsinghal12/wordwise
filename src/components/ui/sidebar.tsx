@@ -28,14 +28,18 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true)
   const [blogHistory, setBlogHistory] = useState<BlogHistoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const loadBlogHistory = async () => {
     try {
+      setIsLoading(true);
       const history = await getBlogHistory();
       setBlogHistory(history);
     } catch (error) {
       console.error('Error loading blog history:', error);
       setBlogHistory([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,13 +98,18 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
           >
             <div className="flex items-center gap-2">
               <History className="w-4 h-4" />
-              <span>Previous Blogs</span>
+              <span>Recent Documents</span>
             </div>
             {isHistoryExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </div>
           {isHistoryExpanded && (
             <div className="mt-2 space-y-1">
-              {blogHistory.length === 0 ? (
+              {isLoading ? (
+                <div className="px-4 py-2 text-sm text-gray-400 flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : blogHistory.length === 0 ? (
                 <div className="px-4 py-2 text-sm text-gray-400">No previous blogs yet.</div>
               ) : (
                 blogHistory.map((item) => (
