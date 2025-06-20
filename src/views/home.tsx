@@ -36,6 +36,7 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
   const [selectedLength, setSelectedLength] = useState<string>('1 page')
   const [selectedTone, setSelectedTone] = useState<string>('Informative/Educational')
+  const [selectedAudience, setSelectedAudience] = useState<string>('Beginner/Novice')
 
   useEffect(() => {
     if (hasHistoryItem) {
@@ -148,16 +149,16 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
                         size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        Audience
+                        {selectedAudience}
                         <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>Beginner/Novice</DropdownMenuItem>
-                      <DropdownMenuItem>General Public/Broad Audience</DropdownMenuItem>
-                      <DropdownMenuItem>Experienced/Intermediate</DropdownMenuItem>
-                      <DropdownMenuItem>Experts/Professionals</DropdownMenuItem>
-                      <DropdownMenuItem>Specific Niche/Enthusiasts</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedAudience('Beginner/Novice')}>Beginner/Novice</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedAudience('General Public/Broad Audience')}>General Public/Broad Audience</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedAudience('Experienced/Intermediate')}>Experienced/Intermediate</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedAudience('Experts/Professionals')}>Experts/Professionals</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedAudience('Specific Niche/Enthusiasts')}>Specific Niche/Enthusiasts</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
