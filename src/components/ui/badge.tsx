@@ -38,6 +38,7 @@ function Badge({
     <Comp
       data-slot="badge"
       className={cn(badgeVariants({ variant }), className)}
+      title={typeof props.children === 'string' ? props.children : undefined}
       {...props}
     />
   )

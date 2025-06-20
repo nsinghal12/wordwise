@@ -96,6 +96,7 @@ function DropdownMenuCheckboxItem({
         className
       )}
       checked={checked}
+      title={typeof children === 'string' ? children : undefined}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
@@ -187,6 +188,7 @@ function DropdownMenuShortcut({
         "text-muted-foreground ml-auto text-xs tracking-widest",
         className
       )}
+      title={typeof props.children === 'string' ? props.children : undefined}
       {...props}
     />
   )
