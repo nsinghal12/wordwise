@@ -3,6 +3,12 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Button } from "@/components/ui/button"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Search,
   FolderOpen,
   Clock,
@@ -11,6 +17,9 @@ import {
   ChevronDown,
   History,
   Loader2,
+  MoreVertical,
+  Copy,
+  Trash2,
 } from "lucide-react"
 import { getBlogHistory, BlogHistoryItem } from "@/lib/blogHistory"
 
@@ -121,8 +130,7 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                 blogHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md"
-                    onClick={() => onHistoryItemClick?.(item)}
+                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md group"
                   >
                     <div className="flex items-center gap-2">
                       <div 
@@ -130,15 +138,52 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                           item.persistenceState === 'error' ? 'text-red-500' : ''
                         }`} 
                         title={item.title}
+                        onClick={() => onHistoryItemClick?.(item)}
                       >
                         {item.title}
                       </div>
-                      {item.persistenceState === 'loading' && (
-                        <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
-                      )}
+                      <div className="flex items-center gap-1">
+                        {item.persistenceState === 'loading' && (
+                          <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                        )}
+                        {item.persistenceState !== 'loading' && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreVertical className="w-3 h-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem>
+                                <Copy className="w-4 h-4 mr-2" />
+                                Make a copy
+                              </DropdownMenuItem>
+                              <DropdownMenuItem variant="destructive">
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500 truncate mt-1" title={item.prompt}>{item.prompt}</div>
-                    <div className="text-xs text-gray-400 mt-1">{formatDate(item.timestamp)}</div>
+                    <div 
+                      className="text-xs text-gray-500 truncate mt-1" 
+                      title={item.prompt}
+                      onClick={() => onHistoryItemClick?.(item)}
+                    >
+                      {item.prompt}
+                    </div>
+                    <div 
+                      className="text-xs text-gray-400 mt-1"
+                      onClick={() => onHistoryItemClick?.(item)}
+                    >
+                      {formatDate(item.timestamp)}
+                    </div>
                   </div>
                 ))
               )}
