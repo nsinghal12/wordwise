@@ -59,9 +59,9 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
   const [blogTitle, setBlogTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
   const [lastValidTitle, setLastValidTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
   const [tempTitle, setTempTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
-  const [selectedLength, setSelectedLength] = useState<string>(LENGTH_OPTIONS[0])
-  const [selectedTone, setSelectedTone] = useState<string>(TONE_OPTIONS[0])
-  const [selectedAudience, setSelectedAudience] = useState<string>(AUDIENCE_OPTIONS[0])
+  const [selectedLength, setSelectedLength] = useState<string>('')
+  const [selectedTone, setSelectedTone] = useState<string>('')
+  const [selectedAudience, setSelectedAudience] = useState<string>('')
 
   useEffect(() => {
     if (hasHistoryItem) {
@@ -154,7 +154,12 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
     if (promptValue && !isSubmitting) {
       try {
         setIsSubmitting(true);
-        const { title, content } = await createBlog(promptValue, selectedLength, selectedTone, selectedAudience);
+        const { title, content } = await createBlog(
+          promptValue, 
+          selectedLength || LENGTH_OPTIONS[0], 
+          selectedTone || TONE_OPTIONS[0], 
+          selectedAudience || AUDIENCE_OPTIONS[0]
+        );
         setEditorContent(content);
         setBlogTitle(title);
         setLastValidTitle(title);
@@ -210,9 +215,9 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
     setBlogTitle('');
     setLastValidTitle('');
     setTempTitle('');
-    setSelectedLength(LENGTH_OPTIONS[0]);
-    setSelectedTone(TONE_OPTIONS[0]);
-    setSelectedAudience(AUDIENCE_OPTIONS[0]);
+    setSelectedLength('');
+    setSelectedTone('');
+    setSelectedAudience('');
     setShowEditor(false);
     
     // Focus the prompt input after a short delay to ensure DOM is updated
@@ -282,7 +287,7 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
                         size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        {selectedLength}
+                        {selectedLength || 'Length'}
                         <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -303,7 +308,7 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
                         size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        {selectedTone}
+                        {selectedTone || 'Tone'}
                         <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -324,7 +329,7 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
                         size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        {selectedAudience}
+                        {selectedAudience || 'Audience'}
                         <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
