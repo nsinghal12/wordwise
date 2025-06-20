@@ -126,31 +126,41 @@ export async function POST(request: Request) {
     }
 
     // Create the blog writing prompt
-    const blogPrompt = `Write a blog post on "${prompt}" using markdown with this framework:
+    const blogPrompt = `Generate a blog post on "${prompt}" in two parts:
+
+PART 1 - TITLE:
+Create a 4-8 word title that:
+- Resonates with ${audience || 'a general'} audience
+- Matches a ${tone || 'balanced'} tone
+- Captures the essence of the topic
+- Is SEO-friendly and engaging
+Output the title on a single line prefixed with "TITLE: "
+
+PART 2 - CONTENT:
+Write the blog post using this markdown framework:
 
 ${lengthInstruction}
 
-1. **Title:** Create a 4-8 word compelling title that resonates with ${audience || 'a general'} audience
+1. **Main Content Structure:**
+   - Start with a hook that:
+     - Immediately grabs the attention of ${audience || 'readers'}
+     - Establishes relevance to their context
+     - Sets the appropriate tone for the piece
 
-2. **Hook:** Open with 2 impactful sentences that:
-   - Immediately grab the attention of ${audience || 'readers'}
-   - Establish relevance to their context
-   - Set the appropriate tone for the piece
-
-3. **Body:** 
+2. **Body:** 
    - Use 3-4 H2 sections with clear, focused headers
    - Structure content for ${audience || 'general'} comprehension level
    - Include relevant examples and evidence
    - Add bullet points for key takeaways
    - Bold essential points for easy scanning
 
-4. **Tone Instructions:** ${toneInstruction}
+3. **Tone Instructions:** ${toneInstruction}
 
-5. **Audience Considerations:** ${audienceInstruction}
+4. **Audience Considerations:** ${audienceInstruction}
 
-6. **Close:** End with a relevant call-to-action or discussion prompt that resonates with ${audience || 'readers'}
+5. **Close:** End with a relevant call-to-action or discussion prompt that resonates with ${audience || 'readers'}
 
-Output ONLY raw markdown without explanations.`;
+Start the content with "CONTENT: " on a new line after the title.`;
 
     // Call the LLM service
     const llmResponse = await invokeLLM(blogPrompt);
@@ -163,9 +173,18 @@ Output ONLY raw markdown without explanations.`;
       );
     }
 
-    // Return the generated content
+    // Parse the response to separate title and content
+    const responseText = llmResponse.content;
+    const titleMatch = responseText.match(/TITLE:\s*(.+?)(?=\n|$)/);
+    const contentMatch = responseText.match(/CONTENT:\s*([\s\S]+)$/);
+
+    const title = titleMatch ? titleMatch[1].trim() : 'Untitled Blog Post';
+    const content = contentMatch ? contentMatch[1].trim() : responseText;
+
+    // Return both the title and content
     return NextResponse.json({
-      content: llmResponse.content
+      title,
+      content
     });
 
   } catch (error) {
