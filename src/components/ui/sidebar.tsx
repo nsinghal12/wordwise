@@ -26,6 +26,7 @@ import { getBlogHistory, BlogHistoryItem } from "@/lib/blogHistory"
 interface SidebarProps {
   onHistoryItemClick?: (item: BlogHistoryItem) => void;
   onNewDocument?: () => void;
+  onCopyItem?: (item: BlogHistoryItem) => Promise<void>;
 }
 
 export interface SidebarRef {
@@ -34,7 +35,7 @@ export interface SidebarRef {
   updateItemState: (id: string, state: 'loading' | 'success' | 'error') => void;
 }
 
-export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick, onNewDocument }, ref) => {
+export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick, onNewDocument, onCopyItem }, ref) => {
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true)
   const [blogHistory, setBlogHistory] = useState<BlogHistoryItem[]>([])
@@ -67,6 +68,12 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
         ? { ...item, persistenceState: state }
         : item
     ));
+  };
+
+  const handleCopyItem = async (item: BlogHistoryItem) => {
+    if (onCopyItem) {
+      await onCopyItem(item);
+    }
   };
 
   // Expose functions via ref
@@ -158,11 +165,14 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                onClick={() => handleCopyItem(item)}
+                              >
                                 <Copy className="w-4 h-4 mr-2" />
                                 Make a copy
                               </DropdownMenuItem>
-                              <DropdownMenuItem variant="destructive">
+                              <DropdownMenuItem variant="destructive" className="cursor-pointer">
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete
                               </DropdownMenuItem>

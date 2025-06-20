@@ -6,6 +6,7 @@ import { Header } from "@/components/ui/header"
 import Home, { HomeRef } from "@/views/home"
 import LoginView from "@/views/login"
 import { BlogHistoryItem } from "@/lib/blogHistory"
+import { copyBlogFromHistory } from "@/lib/blogHistory"
 import { useAuth } from "@/lib/AuthContext"
 
 export default function App() {
@@ -42,6 +43,34 @@ export default function App() {
     setSelectedHistoryItem(item);
   };
 
+  const handleCopyItem = async (item: BlogHistoryItem) => {
+    try {
+      console.log('Copying item:', item);
+      
+      // Create a copy in the database
+      const result = await copyBlogFromHistory(item);
+      
+      if (result.success && result.newItem) {
+        // Add the optimistic item to the sidebar
+        sidebarRef.current?.addOptimisticItem(result.newItem);
+        
+        // Load the copied item in the editor
+        setSelectedHistoryItem(result.newItem);
+        
+        // Refresh the sidebar to get the updated list
+        await sidebarRef.current?.refreshHistory();
+        
+        console.log('Blog copied successfully');
+      } else {
+        console.error('Failed to copy blog:', result.error);
+        // You might want to show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Error copying blog:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
   const handleNewDocument = () => {
     console.log('New document clicked');
     setSelectedHistoryItem(null);
@@ -66,7 +95,12 @@ export default function App() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar */}
-      <Sidebar ref={sidebarRef} onHistoryItemClick={handleHistoryItemClick} onNewDocument={handleNewDocument} />
+      <Sidebar 
+        ref={sidebarRef} 
+        onHistoryItemClick={handleHistoryItemClick} 
+        onNewDocument={handleNewDocument}
+        onCopyItem={handleCopyItem}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -74,7 +108,13 @@ export default function App() {
         <Header onLogout={handleLogout} />
 
         {/* Main Content Area */}
-        <Home ref={homeRef} selectedHistoryItem={selectedHistoryItem} onBlogCreated={() => sidebarRef.current?.refreshHistory()} sidebarRef={sidebarRef} />
+        <Home 
+          key={selectedHistoryItem?.id || 'new'} 
+          ref={homeRef} 
+          selectedHistoryItem={selectedHistoryItem} 
+          onBlogCreated={() => sidebarRef.current?.refreshHistory()} 
+          sidebarRef={sidebarRef} 
+        />
       </div>
     </div>
   );

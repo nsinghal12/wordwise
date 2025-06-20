@@ -186,6 +186,40 @@ export async function updateBlogInHistory(id: string, title: string, prompt: str
   }
 }
 
+export async function copyBlogFromHistory(originalItem: BlogHistoryItem): Promise<{ success: boolean; error?: string; newItem?: BlogHistoryItem }> {
+  const copiedTitle = `${originalItem.title} (Copy)`;
+  const newItem: BlogHistoryItem = {
+    id: Date.now().toString(), // Temporary ID for optimistic update
+    title: copiedTitle,
+    prompt: originalItem.prompt,
+    content: originalItem.content,
+    timestamp: Date.now(),
+    userId: originalItem.userId,
+    persistenceState: 'loading'
+  };
+
+  const result = await saveBlogToHistory(copiedTitle, originalItem.prompt, originalItem.content);
+  
+  if (result.success) {
+    return { 
+      success: true, 
+      newItem: {
+        ...newItem,
+        persistenceState: 'success'
+      }
+    };
+  } else {
+    return { 
+      success: false, 
+      error: result.error,
+      newItem: {
+        ...newItem,
+        persistenceState: 'error'
+      }
+    };
+  }
+}
+
 // Fallback functions for localStorage (when user is not authenticated or Firebase fails)
 function saveBlogToLocalStorage(title: string, prompt: string, content: string): void {
   if (typeof window === 'undefined') return;
