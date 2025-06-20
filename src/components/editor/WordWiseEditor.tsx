@@ -180,8 +180,11 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         if (!isWorkerReady || !editor) return;
 
         try {
-            // First, clear all existing spelling error marks
-            editor.chain().unsetMark('spellingError').run();
+            // First, clear all existing spelling error marks completely
+            editor.chain().focus().unsetMark('spellingError').run();
+            
+            // Small delay to ensure marks are cleared before applying new ones
+            await new Promise(resolve => setTimeout(resolve, 10));
             
             // Get spelling errors from worker
             const errors = await checkSpelling(text);
@@ -191,11 +194,14 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 const wordStart = error.start;
                 const wordEnd = wordStart + error.length;
                 
-                // Apply spelling error mark to this word
-                editor.chain()
-                    .setTextSelection({ from: wordStart, to: wordEnd })
-                    .setMark('spellingError', { word: error.word })
-                    .run();
+                // Double-check that we're within document bounds
+                if (wordStart >= 0 && wordEnd <= editor.state.doc.content.size) {
+                    // Apply spelling error mark to this word
+                    editor.chain()
+                        .setTextSelection({ from: wordStart, to: wordEnd })
+                        .setMark('spellingError', { word: error.word })
+                        .run();
+                }
             });
 
             setSpellingErrors(errors);
@@ -221,23 +227,29 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         if (!editor) return;
 
         // Run grammar highlighting in a non-blocking way using a Promise
-        Promise.resolve().then(() => {
-            // First, clear all existing grammar error marks
-            editor.chain().unsetMark('grammarError').run();
+        Promise.resolve().then(async () => {
+            // First, clear all existing grammar error marks completely
+            editor.chain().focus().unsetMark('grammarError').run();
+            
+            // Small delay to ensure marks are cleared before applying new ones
+            await new Promise(resolve => setTimeout(resolve, 10));
             
             // Apply grammar error marks for each error
             grammarErrors.forEach((error, index) => {
                 const from = error.offset + 1; // Add 1 to account for document structure
                 const to = from + error.length;
                 
-                // Apply grammar error mark to this error
-                editor.chain()
-                    .setTextSelection({ from, to })
-                    .setMark('grammarError', { 
-                        errorId: `grammar-${index}`,
-                        message: error.message 
-                    })
-                    .run();
+                // Double-check that we're within document bounds
+                if (from >= 0 && to <= editor.state.doc.content.size && from < to) {
+                    // Apply grammar error mark to this error
+                    editor.chain()
+                        .setTextSelection({ from, to })
+                        .setMark('grammarError', { 
+                            errorId: `grammar-${index}`,
+                            message: error.message 
+                        })
+                        .run();
+                }
             });
         });
     }, [editor]);
@@ -366,15 +378,26 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 const adjustedFrom = range.from + 1; // Add 1 to account for document structure
                 const adjustedTo = range.to + 1;
                 
+                // First clear the grammar error mark, then replace the text
                 editor
                     .chain()
                     .focus()
                     .setTextSelection({ from: adjustedFrom, to: adjustedTo })
+                    .unsetMark('grammarError')
                     .deleteSelection()
                     .insertContent(cleanReplacement)
                     .run();
+                
+                // Force re-evaluation of grammar errors
+                setTimeout(() => {
+                    if (editor) {
+                        const newText = editor.getText();
+                        setContent(newText);
+                    }
+                }, 50);
             } else {
-                // For spelling suggestions, the range is already calculated correctly from our spell checker
+                // For spelling suggestions, first clear all spelling error marks from the entire document
+                // then replace the specific text
                 editor
                     .chain()
                     .focus()
@@ -383,18 +406,29 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                     .deleteSelection()
                     .insertContent(cleanReplacement)
                     .run();
+                
+                // Clear the spelling error from our local state
+                setSpellingErrors(prevErrors => 
+                    prevErrors.filter(error => 
+                        !(error.start <= range.from && error.start + error.length >= range.to)
+                    )
+                );
+                
+                // Force a complete re-check after a short delay to ensure all marks are updated
+                setTimeout(async () => {
+                    if (editor) {
+                        const newText = editor.getText();
+                        // Clear all spelling error marks first
+                        editor.chain().unsetMark('spellingError').run();
+                        // Then re-run spell check
+                        await performSpellCheck(newText);
+                    }
+                }, 100);
             }
             
             // Clear the selection after applying the suggestion
             setSelectedText('');
             setSelectedRange(null);
-            
-            // Re-run spell check after applying correction to update highlights
-            setTimeout(async () => {
-                if (editor) {
-                    await performSpellCheck(editor.getText());
-                }
-            }, 100);
         }
     }, [editor, performSpellCheck]);
 
