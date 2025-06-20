@@ -22,6 +22,22 @@ import {
 import { createBlog } from "@/lib/blog"
 import { BlogHistoryItem } from "@/lib/blogHistory"
 
+const LENGTH_OPTIONS = ['1 page', '3-5 pages', '8-10 pages', '15+ pages'];
+const TONE_OPTIONS = [
+  'Informative/Educational',
+  'Conversational/Friendly',
+  'Professional/Authoritative',
+  'Enthusiastic/Uplifting',
+  'Humorous/Witty'
+];
+const AUDIENCE_OPTIONS = [
+  'Beginner/Novice',
+  'General Public/Broad Audience',
+  'Experienced/Intermediate',
+  'Experts/Professionals',
+  'Specific Niche/Enthusiasts'
+];
+
 interface HomeProps {
   selectedHistoryItem?: BlogHistoryItem | null;
   onBlogCreated?: () => void;
@@ -34,9 +50,9 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
   const [editorContent, setEditorContent] = useState<string>(hasHistoryItem ? selectedHistoryItem?.content || '' : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
-  const [selectedLength, setSelectedLength] = useState<string>('1 page')
-  const [selectedTone, setSelectedTone] = useState<string>('Informative/Educational')
-  const [selectedAudience, setSelectedAudience] = useState<string>('Beginner/Novice')
+  const [selectedLength, setSelectedLength] = useState<string>(LENGTH_OPTIONS[0])
+  const [selectedTone, setSelectedTone] = useState<string>(TONE_OPTIONS[0])
+  const [selectedAudience, setSelectedAudience] = useState<string>(AUDIENCE_OPTIONS[0])
 
   useEffect(() => {
     if (hasHistoryItem) {
@@ -113,10 +129,11 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setSelectedLength('1 page')}>1 page</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedLength('3-5 pages')}>3-5 pages</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedLength('8-10 pages')}>8-10 pages</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedLength('15+ pages')}>15+ pages</DropdownMenuItem>
+                      {LENGTH_OPTIONS.map((length) => (
+                        <DropdownMenuItem key={length} onClick={() => setSelectedLength(length)}>
+                          {length}
+                        </DropdownMenuItem>
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   
@@ -133,11 +150,11 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setSelectedTone('Informative/Educational')}>Informative/Educational</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedTone('Conversational/Friendly')}>Conversational/Friendly</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedTone('Professional/Authoritative')}>Professional/Authoritative</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedTone('Enthusiastic/Uplifting')}>Enthusiastic/Uplifting</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedTone('Humorous/Witty')}>Humorous/Witty</DropdownMenuItem>
+                      {TONE_OPTIONS.map((tone) => (
+                        <DropdownMenuItem key={tone} onClick={() => setSelectedTone(tone)}>
+                          {tone}
+                        </DropdownMenuItem>
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
 
@@ -154,11 +171,11 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setSelectedAudience('Beginner/Novice')}>Beginner/Novice</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedAudience('General Public/Broad Audience')}>General Public/Broad Audience</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedAudience('Experienced/Intermediate')}>Experienced/Intermediate</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedAudience('Experts/Professionals')}>Experts/Professionals</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSelectedAudience('Specific Niche/Enthusiasts')}>Specific Niche/Enthusiasts</DropdownMenuItem>
+                      {AUDIENCE_OPTIONS.map((audience) => (
+                        <DropdownMenuItem key={audience} onClick={() => setSelectedAudience(audience)}>
+                          {audience}
+                        </DropdownMenuItem>
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
