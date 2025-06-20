@@ -75,25 +75,28 @@ export default function App() {
     try {
       console.log('Deleting item:', item);
       
+      // If the deleted item is currently selected, clear the selection immediately
+      if (selectedHistoryItem?.id === item.id) {
+        setSelectedHistoryItem(null);
+        homeRef.current?.resetToNewDocument();
+      }
+      
       // Delete the item from the database
       const result = await deleteBlogFromHistory(item.id);
       
       if (result.success) {
-        // If the deleted item is currently selected, clear the selection
-        if (selectedHistoryItem?.id === item.id) {
-          setSelectedHistoryItem(null);
-          homeRef.current?.resetToNewDocument();
-        }
-        
-        // Refresh the sidebar to get the updated list
-        await sidebarRef.current?.refreshHistory();
-        
+        // Remove the item from the sidebar list
+        sidebarRef.current?.removeItem(item.id);
         console.log('Blog deleted successfully');
       } else {
+        // Reset the deleting state if deletion failed
+        sidebarRef.current?.setItemDeleting(item.id, false);
         console.error('Failed to delete blog:', result.error);
         // You might want to show an error message to the user here
       }
     } catch (error) {
+      // Reset the deleting state if deletion failed
+      sidebarRef.current?.setItemDeleting(item.id, false);
       console.error('Error deleting blog:', error);
       // You might want to show an error message to the user here
     }

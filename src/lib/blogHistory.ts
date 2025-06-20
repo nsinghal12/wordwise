@@ -13,6 +13,7 @@ export interface BlogHistoryItem {
   timestamp: number;
   userId?: string;
   persistenceState?: 'loading' | 'success' | 'error';
+  isDeleting?: boolean;
 }
 
 const BLOGS_COLLECTION = 'blogs';

@@ -35,6 +35,8 @@ export interface SidebarRef {
   refreshHistory: () => Promise<void>;
   addOptimisticItem: (item: BlogHistoryItem) => void;
   updateItemState: (id: string, state: 'loading' | 'success' | 'error') => void;
+  removeItem: (id: string) => void;
+  setItemDeleting: (id: string, isDeleting: boolean) => void;
 }
 
 export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick, onNewDocument, onCopyItem, onDeleteItem }, ref) => {
@@ -74,6 +76,18 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
     ));
   };
 
+  const removeItem = (id: string) => {
+    setBlogHistory(prev => prev.filter(item => item.id !== id));
+  };
+
+  const setItemDeleting = (id: string, isDeleting: boolean) => {
+    setBlogHistory(prev => prev.map(item => 
+      item.id === id 
+        ? { ...item, isDeleting }
+        : item
+    ));
+  };
+
   const handleCopyItem = async (item: BlogHistoryItem) => {
     if (onCopyItem) {
       await onCopyItem(item);
@@ -87,8 +101,19 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete && onDeleteItem) {
-      await onDeleteItem(itemToDelete);
+      // Hide dialog immediately and show deleting state
       setShowDeleteDialog(false);
+      setItemDeleting(itemToDelete.id, true);
+      
+      try {
+        await onDeleteItem(itemToDelete);
+        // Item will be removed by the parent component after successful deletion
+      } catch (error) {
+        // Reset deleting state if deletion failed
+        setItemDeleting(itemToDelete.id, false);
+        console.error('Failed to delete item:', error);
+      }
+      
       setItemToDelete(null);
     }
   };
@@ -102,7 +127,9 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
   useImperativeHandle(ref, () => ({
     refreshHistory: loadBlogHistory,
     addOptimisticItem,
-    updateItemState
+    updateItemState,
+    removeItem,
+    setItemDeleting
   }))
 
   const formatDate = (timestamp: number) => {
@@ -159,15 +186,17 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                 blogHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md group"
+                    className={`px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md group ${
+                      item.isDeleting ? 'opacity-60' : ''
+                    }`}
                   >
                     <div className="flex items-center gap-2">
                       <div 
                         className={`font-medium truncate flex-1 ${
                           item.persistenceState === 'error' ? 'text-red-500' : ''
-                        }`} 
+                        } ${item.isDeleting ? 'line-through text-gray-400' : ''}`} 
                         title={item.title}
-                        onClick={() => onHistoryItemClick?.(item)}
+                        onClick={() => !item.isDeleting && onHistoryItemClick?.(item)}
                       >
                         {item.title}
                       </div>
@@ -175,7 +204,10 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                         {item.persistenceState === 'loading' && (
                           <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
                         )}
-                        {item.persistenceState !== 'loading' && (
+                        {item.isDeleting && (
+                          <Loader2 className="w-3 h-3 animate-spin text-red-400" />
+                        )}
+                        {item.persistenceState !== 'loading' && !item.isDeleting && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
@@ -208,15 +240,15 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                       </div>
                     </div>
                     <div 
-                      className="text-xs text-gray-500 truncate mt-1" 
+                      className={`text-xs text-gray-500 truncate mt-1 ${item.isDeleting ? 'line-through' : ''}`}
                       title={item.prompt}
-                      onClick={() => onHistoryItemClick?.(item)}
+                      onClick={() => !item.isDeleting && onHistoryItemClick?.(item)}
                     >
                       {item.prompt}
                     </div>
                     <div 
-                      className="text-xs text-gray-400 mt-1"
-                      onClick={() => onHistoryItemClick?.(item)}
+                      className={`text-xs text-gray-400 mt-1 ${item.isDeleting ? 'line-through' : ''}`}
+                      onClick={() => !item.isDeleting && onHistoryItemClick?.(item)}
                     >
                       {formatDate(item.timestamp)}
                     </div>
