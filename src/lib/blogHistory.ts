@@ -3,6 +3,7 @@ import { auth, db } from './firebase';
 
 export interface BlogHistoryItem {
   id: string;
+  title: string;
   prompt: string;
   content: string;
   timestamp: number;
@@ -11,17 +12,18 @@ export interface BlogHistoryItem {
 
 const BLOGS_COLLECTION = 'blogs';
 
-export async function saveBlogToHistory(prompt: string, content: string): Promise<void> {
+export async function saveBlogToHistory(title: string, prompt: string, content: string): Promise<void> {
   try {
     const user = auth.currentUser;
     if (!user) {
       console.log('User not authenticated. Saving blog to local storage.');
       // Fallback to localStorage for unauthenticated users
-      saveBlogToLocalStorage(prompt, content);
+      saveBlogToLocalStorage(title, prompt, content);
       return;
     }
 
     const blogData = {
+      title,
       prompt,
       content,
       timestamp: Date.now(),
@@ -44,7 +46,7 @@ export async function saveBlogToHistory(prompt: string, content: string): Promis
       console.log('Firebase unavailable, using local storage instead');
     }
     // Fallback to localStorage if Firebase fails or times out
-    saveBlogToLocalStorage(prompt, content);
+    saveBlogToLocalStorage(title, prompt, content);
   }
 }
 
@@ -77,6 +79,7 @@ export async function getBlogHistory(): Promise<BlogHistoryItem[]> {
       const data = doc.data();
       blogs.push({
         id: doc.id,
+        title: data.title,
         prompt: data.prompt,
         content: data.content,
         timestamp: data.timestamp,
@@ -97,12 +100,13 @@ export async function getBlogHistory(): Promise<BlogHistoryItem[]> {
 }
 
 // Fallback functions for localStorage (when user is not authenticated or Firebase fails)
-function saveBlogToLocalStorage(prompt: string, content: string): void {
+function saveBlogToLocalStorage(title: string, prompt: string, content: string): void {
   if (typeof window === 'undefined') return;
   
   const history = getBlogHistoryFromLocalStorage();
   const newItem: BlogHistoryItem = {
     id: Date.now().toString(),
+    title,
     prompt,
     content,
     timestamp: Date.now(),

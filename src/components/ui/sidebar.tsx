@@ -92,7 +92,8 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                     className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md"
                     onClick={() => onHistoryItemClick?.(item)}
                   >
-                    <div className="truncate">{item.prompt}</div>
+                    <div className="font-medium truncate">{item.title}</div>
+                    <div className="text-xs text-gray-500 truncate mt-1">{item.prompt}</div>
                     <div className="text-xs text-gray-400 mt-1">{formatDate(item.timestamp)}</div>
                   </div>
                 ))

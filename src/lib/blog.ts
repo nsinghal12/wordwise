@@ -15,10 +15,10 @@ export async function createBlog(prompt: string, tone?: string, audience?: strin
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        const { title, content } = await response.json();
         // Save to history after successful creation (now async)
-        await saveBlogToHistory(prompt, data.content);
-        return data.content;
+        await saveBlogToHistory(title, prompt, content);
+        return content;
     } catch (error) {
         console.error('Error creating blog:', error);
         throw error;

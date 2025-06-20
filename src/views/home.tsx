@@ -50,6 +50,7 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
   const [editorContent, setEditorContent] = useState<string>(hasHistoryItem ? selectedHistoryItem?.content || '' : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
+  const [blogTitle, setBlogTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
   const [selectedLength, setSelectedLength] = useState<string>(LENGTH_OPTIONS[0])
   const [selectedTone, setSelectedTone] = useState<string>(TONE_OPTIONS[0])
   const [selectedAudience, setSelectedAudience] = useState<string>(AUDIENCE_OPTIONS[0])
@@ -58,6 +59,7 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
     if (hasHistoryItem) {
       setPromptValue(selectedHistoryItem?.prompt || '');
       setEditorContent(selectedHistoryItem?.content || '');
+      setBlogTitle(selectedHistoryItem?.title || '');
       setShowEditor(true);
     }
   }, [hasHistoryItem, selectedHistoryItem]);
