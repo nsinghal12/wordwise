@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { prompt, length } = body;
+    const { prompt, length, tone, audience } = body;
 
     if (!prompt) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     // Determine the length instruction based on the selected length
     let lengthInstruction = '';
-    switch(length) {
+    switch (length) {
       case '1 page':
         lengthInstruction = 'Keep it concise and focused - aim for about 500-800 words (1 page length).';
         break;
@@ -55,35 +55,103 @@ export async function POST(request: Request) {
         lengthInstruction = 'Keep it well-structured and appropriately detailed.';
     }
 
+    // Determine tone instructions
+    let toneInstruction = '';
+    switch (tone?.toLowerCase()) {
+      case 'professional':
+        toneInstruction = `
+   - Maintain a polished, authoritative voice
+   - Use industry-standard terminology
+   - Keep the content factual and well-researched
+   - Minimal emoji usage (1-2 total)
+   - Focus on data-driven insights`;
+        break;
+      case 'casual':
+        toneInstruction = `
+   - Write like you're chatting with a friend
+   - Use conversational language and relatable examples
+   - Include occasional humor and light-hearted remarks
+   - Moderate emoji usage (1 per section)
+   - Share personal anecdotes when relevant`;
+        break;
+      case 'humorous':
+        toneInstruction = `
+   - 85% witty friend + 15% snarky commentator
+   - Frequent but tasteful emoji usage
+   - Playful exaggeration and pop culture references
+   - Include witty metaphors and analogies
+   - Keep it entertaining while informative`;
+        break;
+      default:
+        toneInstruction = `
+   - Balance professionalism with approachability
+   - Use clear, engaging language
+   - Include occasional emoji for emphasis
+   - Mix insights with relatable examples`;
+    }
+
+    // Determine audience-specific instructions
+    let audienceInstruction = '';
+    switch (audience?.toLowerCase()) {
+      case 'professionals':
+        audienceInstruction = `
+   - Focus on industry trends and advanced concepts
+   - Include relevant statistics and case studies
+   - Reference industry standards and best practices
+   - Address common professional challenges
+   - Provide actionable business insights`;
+        break;
+      case 'students':
+        audienceInstruction = `
+   - Break down complex concepts into digestible parts
+   - Include practical examples and study tips
+   - Reference academic contexts and learning scenarios
+   - Address common student pain points
+   - Provide clear learning takeaways`;
+        break;
+      case 'general':
+        audienceInstruction = `
+   - Keep explanations accessible to a broad audience
+   - Use universal examples and analogies
+   - Avoid technical jargon or explain when necessary
+   - Focus on practical, everyday applications
+   - Include diverse perspectives`;
+        break;
+      default:
+        audienceInstruction = `
+   - Maintain broad appeal while being informative
+   - Balance depth with accessibility
+   - Include examples for different experience levels
+   - Focus on widely applicable insights`;
+    }
+
     // Create the blog writing prompt
     const blogPrompt = `Write a blog post on "${prompt}" using markdown with this framework:
 
 ${lengthInstruction}
 
-1. **Title:** Create a 4-8 word viral-style title with power words and 1 emoji (e.g., "The Untold Truth About ${prompt} 🤯")
-   
-2. **Hook:** Open with 2 punchy sentences max that either:
-   - Ask a controversial question 
-   - Share a ridiculous personal fail 
-   - Drop an absurd statistic 
-   *(Include 1 relevant emoji)*
+1. **Title:** Create a 4-8 word compelling title that resonates with ${audience || 'a general'} audience
+
+2. **Hook:** Open with 2 impactful sentences that:
+   - Immediately grab the attention of ${audience || 'readers'}
+   - Establish relevance to their context
+   - Set the appropriate tone for the piece
 
 3. **Body:** 
-   - Use 3-4 H2 sections with cheeky emoji-enhanced headers
-   - Mix self-deprecating humor + pop culture references
-   - Add 1 satirical metaphor per section ("Like a toddler with a chainsaw...")
-   - Include bullet points with 😂/💡/⚠️ emojis
-   - Bold key takeaways for skimmers
+   - Use 3-4 H2 sections with clear, focused headers
+   - Structure content for ${audience || 'general'} comprehension level
+   - Include relevant examples and evidence
+   - Add bullet points for key takeaways
+   - Bold essential points for easy scanning
 
-4. **Tone:** 
-   - 85% witty friend + 15% snarky commentator
-   - 1-2 emojis per paragraph max
-   - Playful exaggeration ("This changed my life more than discovering avocado toast")
+4. **Tone Instructions:** ${toneInstruction}
 
-5. **Close:** End with an interactive CTA/question that sparks debate ("Fight me in the comments if you disagree! 👊")
+5. **Audience Considerations:** ${audienceInstruction}
+
+6. **Close:** End with a relevant call-to-action or discussion prompt that resonates with ${audience || 'readers'}
 
 Output ONLY raw markdown without explanations.`;
-    
+
     // Call the LLM service
     const llmResponse = await invokeLLM(blogPrompt);
 
@@ -99,7 +167,7 @@ Output ONLY raw markdown without explanations.`;
     return NextResponse.json({
       content: llmResponse.content
     });
-    
+
   } catch (error) {
     console.error('Error processing blog creation request:', error);
     return NextResponse.json(
