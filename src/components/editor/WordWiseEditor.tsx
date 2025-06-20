@@ -120,7 +120,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         content: initialContent,
         editorProps: {
             attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+                class: 'wordwise-editor mx-auto focus:outline-none min-h-[200px] p-4',
                 spellcheck: spellCheck ? 'true' : 'false',
                 autocorrect: spellCheck ? 'on' : 'off',
             },
@@ -676,19 +676,37 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
                     {/* Heading Controls */}
                     <MenuButton
-                        onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+                        onClick={() => {
+                            if (editor?.isActive('heading', { level: 1 })) {
+                                editor.chain().focus().setParagraph().run();
+                            } else {
+                                editor?.chain().focus().setHeading({ level: 1 }).run();
+                            }
+                        }}
                         isActive={editor?.isActive('heading', { level: 1 })}
                     >
                         H1
                     </MenuButton>
                     <MenuButton
-                        onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+                        onClick={() => {
+                            if (editor?.isActive('heading', { level: 2 })) {
+                                editor.chain().focus().setParagraph().run();
+                            } else {
+                                editor?.chain().focus().setHeading({ level: 2 }).run();
+                            }
+                        }}
                         isActive={editor?.isActive('heading', { level: 2 })}
                     >
                         H2
                     </MenuButton>
                     <MenuButton
-                        onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+                        onClick={() => {
+                            if (editor?.isActive('heading', { level: 3 })) {
+                                editor.chain().focus().setParagraph().run();
+                            } else {
+                                editor?.chain().focus().setHeading({ level: 3 }).run();
+                            }
+                        }}
                         isActive={editor?.isActive('heading', { level: 3 })}
                     >
                         H3

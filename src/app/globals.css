@@ -120,3 +120,95 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* WordWise Editor Styles */
+  .wordwise-editor {
+    @apply text-gray-900 leading-relaxed;
+  }
+  
+  .wordwise-editor h1 {
+    @apply text-4xl font-bold text-gray-900 mb-6 mt-8 leading-tight;
+  }
+  
+  .wordwise-editor h2 {
+    @apply text-3xl font-semibold text-gray-800 mb-4 mt-6 leading-tight;
+  }
+  
+  .wordwise-editor h3 {
+    @apply text-2xl font-medium text-gray-800 mb-3 mt-5 leading-tight;
+  }
+  
+  .wordwise-editor h4 {
+    @apply text-xl font-medium text-gray-700 mb-2 mt-4;
+  }
+  
+  .wordwise-editor h5 {
+    @apply text-lg font-medium text-gray-700 mb-2 mt-3;
+  }
+  
+  .wordwise-editor h6 {
+    @apply text-base font-medium text-gray-700 mb-2 mt-3;
+  }
+  
+  .wordwise-editor p {
+    @apply mb-4 text-gray-700 leading-relaxed;
+  }
+  
+  .wordwise-editor strong {
+    @apply font-semibold text-gray-900;
+  }
+  
+  .wordwise-editor em {
+    @apply italic;
+  }
+  
+  .wordwise-editor code {
+    @apply bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .wordwise-editor pre {
+    @apply bg-gray-100 text-gray-800 p-4 rounded-lg overflow-x-auto mb-4;
+  }
+  
+  .wordwise-editor pre code {
+    @apply bg-transparent p-0 text-sm;
+  }
+  
+  .wordwise-editor blockquote {
+    @apply border-l-4 border-gray-300 pl-4 ml-0 italic text-gray-600 mb-4;
+  }
+  
+  .wordwise-editor ul {
+    @apply list-disc list-inside mb-4 space-y-1;
+  }
+  
+  .wordwise-editor ol {
+    @apply list-decimal list-inside mb-4 space-y-1;
+  }
+  
+  .wordwise-editor li {
+    @apply text-gray-700 leading-relaxed;
+  }
+  
+  .wordwise-editor ul ul, .wordwise-editor ol ol {
+    @apply mt-1 mb-0 ml-6;
+  }
+  
+  .wordwise-editor hr {
+    @apply border-0 border-t border-gray-300 my-8;
+  }
+  
+  /* Text alignment classes */
+  .wordwise-editor [style*="text-align: center"] {
+    @apply text-center;
+  }
+  
+  .wordwise-editor [style*="text-align: right"] {
+    @apply text-right;
+  }
+  
+  .wordwise-editor [style*="text-align: left"] {
+    @apply text-left;
+  }
+}
