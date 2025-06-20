@@ -35,6 +35,7 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
   const [selectedLength, setSelectedLength] = useState<string>('1 page')
+  const [selectedTone, setSelectedTone] = useState<string>('Informative/Educational')
 
   useEffect(() => {
     if (hasHistoryItem) {
@@ -126,16 +127,16 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
                         size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        Tone
+                        {selectedTone}
                         <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>Informative/Educational</DropdownMenuItem>
-                      <DropdownMenuItem>Conversational/Friendly</DropdownMenuItem>
-                      <DropdownMenuItem>Professional/Authoritative</DropdownMenuItem>
-                      <DropdownMenuItem>Enthusiastic/Uplifting</DropdownMenuItem>
-                      <DropdownMenuItem>Humorous/Witty</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedTone('Informative/Educational')}>Informative/Educational</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedTone('Conversational/Friendly')}>Conversational/Friendly</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedTone('Professional/Authoritative')}>Professional/Authoritative</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedTone('Enthusiastic/Uplifting')}>Enthusiastic/Uplifting</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedTone('Humorous/Witty')}>Humorous/Witty</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
