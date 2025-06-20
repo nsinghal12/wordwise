@@ -449,7 +449,10 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
     const MenuButton = ({ onClick, isActive, children }: { onClick: () => void; isActive?: boolean; children: React.ReactNode }) => (
         <button
-            onClick={onClick}
+            onMouseDown={(e) => {
+                e.preventDefault();
+                onClick();
+            }}
             className={`mr-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${isActive
                     ? 'bg-gray-100 text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
