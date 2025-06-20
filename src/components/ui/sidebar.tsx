@@ -2,6 +2,7 @@
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogActions } from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ interface SidebarProps {
   onHistoryItemClick?: (item: BlogHistoryItem) => void;
   onNewDocument?: () => void;
   onCopyItem?: (item: BlogHistoryItem) => Promise<void>;
+  onDeleteItem?: (item: BlogHistoryItem) => Promise<void>;
 }
 
 export interface SidebarRef {
@@ -35,11 +37,13 @@ export interface SidebarRef {
   updateItemState: (id: string, state: 'loading' | 'success' | 'error') => void;
 }
 
-export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick, onNewDocument, onCopyItem }, ref) => {
+export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick, onNewDocument, onCopyItem, onDeleteItem }, ref) => {
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true)
   const [blogHistory, setBlogHistory] = useState<BlogHistoryItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<BlogHistoryItem | null>(null)
 
   const loadBlogHistory = async () => {
     try {
@@ -74,6 +78,24 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
     if (onCopyItem) {
       await onCopyItem(item);
     }
+  };
+
+  const handleDeleteClick = (item: BlogHistoryItem) => {
+    setItemToDelete(item);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (itemToDelete && onDeleteItem) {
+      await onDeleteItem(itemToDelete);
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
+    setItemToDelete(null);
   };
 
   // Expose functions via ref
@@ -172,7 +194,11 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                                 <Copy className="w-4 h-4 mr-2" />
                                 Make a copy
                               </DropdownMenuItem>
-                              <DropdownMenuItem variant="destructive" className="cursor-pointer">
+                              <DropdownMenuItem 
+                                variant="destructive" 
+                                className="cursor-pointer"
+                                onClick={() => handleDeleteClick(item)}
+                              >
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete
                               </DropdownMenuItem>
@@ -201,6 +227,31 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        isOpen={showDeleteDialog}
+        onClose={handleDeleteCancel}
+        title="Delete Document"
+      >
+        <p className="text-gray-600">
+          Are you sure you want to delete "{itemToDelete?.title}"? This action cannot be undone.
+        </p>
+        <DialogActions>
+          <Button
+            variant="outline"
+            onClick={handleDeleteCancel}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteConfirm}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }) 

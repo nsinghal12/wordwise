@@ -1,4 +1,4 @@
-import { collection, addDoc, query, orderBy, limit, getDocs, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, getDocs, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 type STORAGE_STRATEGY = 'LOCAL_STORAGE' | 'FIREBASE';
@@ -220,6 +220,55 @@ export async function copyBlogFromHistory(originalItem: BlogHistoryItem): Promis
   }
 }
 
+export async function deleteBlogFromHistory(id: string): Promise<{ success: boolean; error?: string }> {
+  if (CHOSEN_STORAGE_STRATEGY === 'LOCAL_STORAGE') {
+    try {
+      deleteBlogFromLocalStorage(id);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // Firebase strategy
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.log('User not authenticated. Deleting from local storage.');
+      // Fallback to localStorage for unauthenticated users
+      try {
+        deleteBlogFromLocalStorage(id);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+
+    // Add timeout to prevent hanging
+    const deletePromise = deleteDoc(doc(db, BLOGS_COLLECTION, id));
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('FIREBASE_TIMEOUT')), 5000);
+    });
+
+    await Promise.race([deletePromise, timeoutPromise]);
+    console.log('Blog deleted from Firestore successfully');
+    return { success: true };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'FIREBASE_TIMEOUT') {
+      console.log('Firebase delete timed out, using local storage instead');
+    } else {
+      console.log('Firebase unavailable, using local storage instead');
+    }
+    // Fallback to localStorage if Firebase fails or times out
+    try {
+      deleteBlogFromLocalStorage(id);
+      return { success: true };
+    } catch (fallbackError) {
+      return { success: false, error: fallbackError instanceof Error ? fallbackError.message : 'Unknown error' };
+    }
+  }
+}
+
 // Fallback functions for localStorage (when user is not authenticated or Firebase fails)
 function saveBlogToLocalStorage(title: string, prompt: string, content: string): void {
   if (typeof window === 'undefined') return;
@@ -267,4 +316,12 @@ function updateBlogInLocalStorage(id: string, title: string, prompt: string, con
     };
     localStorage.setItem('wordwise_blog_history', JSON.stringify(history));
   }
+}
+
+function deleteBlogFromLocalStorage(id: string): void {
+  if (typeof window === 'undefined') return;
+  
+  const history = getBlogHistoryFromLocalStorage();
+  const filteredHistory = history.filter(item => item.id !== id);
+  localStorage.setItem('wordwise_blog_history', JSON.stringify(filteredHistory));
 } 

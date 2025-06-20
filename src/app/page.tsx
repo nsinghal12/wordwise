@@ -6,7 +6,7 @@ import { Header } from "@/components/ui/header"
 import Home, { HomeRef } from "@/views/home"
 import LoginView from "@/views/login"
 import { BlogHistoryItem } from "@/lib/blogHistory"
-import { copyBlogFromHistory } from "@/lib/blogHistory"
+import { copyBlogFromHistory, deleteBlogFromHistory } from "@/lib/blogHistory"
 import { useAuth } from "@/lib/AuthContext"
 
 export default function App() {
@@ -71,6 +71,34 @@ export default function App() {
     }
   };
 
+  const handleDeleteItem = async (item: BlogHistoryItem) => {
+    try {
+      console.log('Deleting item:', item);
+      
+      // Delete the item from the database
+      const result = await deleteBlogFromHistory(item.id);
+      
+      if (result.success) {
+        // If the deleted item is currently selected, clear the selection
+        if (selectedHistoryItem?.id === item.id) {
+          setSelectedHistoryItem(null);
+          homeRef.current?.resetToNewDocument();
+        }
+        
+        // Refresh the sidebar to get the updated list
+        await sidebarRef.current?.refreshHistory();
+        
+        console.log('Blog deleted successfully');
+      } else {
+        console.error('Failed to delete blog:', result.error);
+        // You might want to show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
   const handleNewDocument = () => {
     console.log('New document clicked');
     setSelectedHistoryItem(null);
@@ -100,6 +128,7 @@ export default function App() {
         onHistoryItemClick={handleHistoryItemClick} 
         onNewDocument={handleNewDocument}
         onCopyItem={handleCopyItem}
+        onDeleteItem={handleDeleteItem}
       />
 
       {/* Main Content */}
