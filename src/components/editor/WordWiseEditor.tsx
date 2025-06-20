@@ -5,12 +5,9 @@ import { marked } from 'marked';
 import Alignment from '@tiptap/extension-text-align';
 import { Mark } from '@tiptap/core';
 import { useGrammarCheck, GrammarError } from '../../lib/useGrammarCheck';
+import { useLanguageWorker, SpellingError } from '../../lib/useLanguageWorker';
 import { Save, FileDown, Check, X, AlertTriangle, MessageSquare, Wand2, FileText } from 'lucide-react';
 import { Filter } from 'bad-words';
-import Spellchecker from 'hunspell-spellchecker';
-import { getWordsForSpellCheck } from '@/lib/utils';
-
-const checker: any = new Spellchecker();
 
 // Custom spelling error mark extension
 const SpellingErrorMark = Mark.create({
@@ -81,11 +78,7 @@ interface WordWiseEditorProps {
     grammarCheck?: boolean;
 }
 
-interface SpellingError {
-    word: string;
-    start: number;
-    length: number;
-}
+
 
 const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     initialContent = '# Start writing here...',
@@ -101,38 +94,15 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
     const [showSuggestionPanel, setShowSuggestionPanel] = useState(false);
     const [selectedText, setSelectedText] = useState('');
     const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
-    const [spellChecker, setSpellChecker] = useState<Spellchecker | null>(null);
     const [hasProfanity, setHasProfanity] = useState(false);
     const [profanityWords, setProfanityWords] = useState<string[]>([]);
     const profanityFilter = new Filter();
     const spellCheckTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    
+    // Use the language worker for spell checking and profanity detection
+    const { isWorkerReady, checkSpelling, checkProfanity } = useLanguageWorker();
 
-    // Initialize spellchecker
-    useEffect(() => {
-        const loadDictionary = async () => {
-            console.log('Loading dictionary...');
-            try {
-                const [affData, dicData] = await Promise.all([
-                    fetch('/dictionaries/en_US.aff').then(response => response.text()),
-                    fetch('/dictionaries/en_US.dic').then(response => response.text())
-                ]);
 
-                const dictionaries = checker.parse({
-                    aff: affData,
-                    dic: dicData
-                });
-
-                // load
-                checker.use(dictionaries);
-
-                setSpellChecker(checker);
-            } catch (error) {
-                console.error('Failed to load dictionary:', error);
-            }
-        };
-
-        loadDictionary();
-    }, []);
 
     // Placeholder for spell check functions - will be defined after editor
     let performSpellCheck: (text: string) => void;
@@ -205,58 +175,35 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         },
     });
 
-    // Spell check function wrapped in useCallback
-    performSpellCheck = useCallback((text: string) => {
-        if (!spellChecker || !editor) return;
+    // Spell check function using web worker
+    performSpellCheck = useCallback(async (text: string) => {
+        if (!isWorkerReady || !editor) return;
 
-        // Run spell check in a non-blocking way using a Promise
-        Promise.resolve().then(() => {
-            const doc = editor.state.doc;
-            const errors: SpellingError[] = [];
-            
+        try {
             // First, clear all existing spelling error marks
             editor.chain().unsetMark('spellingError').run();
             
-            // Walk through the document and find misspelled words
-            doc.descendants((node, pos) => {
-                if (node.isText && node.text) {
-                    const words = node.text.match(/\b\w+\b/g);
-                    if (words) {
-                        let offset = 0;
-                        words.forEach(word => {
-                            const wordIndex = node.text!.indexOf(word, offset);
-                            if (wordIndex !== -1) {
-                                // Skip numbers and URLs
-                                if (!word.match(/^\d+$/) && !word.match(/^https?:\/\//)) {
-                                    if (!spellChecker.check(word)) {
-                                        const wordStart = pos + wordIndex;
-                                        const wordEnd = wordStart + word.length;
-                                        
-                                        errors.push({
-                                            word,
-                                            start: wordStart,
-                                            length: word.length
-                                        });
-                                        
-                                        // Apply spelling error mark to this word
-                                        editor.chain()
-                                            .setTextSelection({ from: wordStart, to: wordEnd })
-                                            .setMark('spellingError', { word })
-                                            .run();
-                                    }
-                                }
-                                offset = wordIndex + word.length;
-                            }
-                        });
-                    }
-                }
+            // Get spelling errors from worker
+            const errors = await checkSpelling(text);
+            
+            // Apply spelling error marks
+            errors.forEach(error => {
+                const wordStart = error.start;
+                const wordEnd = wordStart + error.length;
+                
+                // Apply spelling error mark to this word
+                editor.chain()
+                    .setTextSelection({ from: wordStart, to: wordEnd })
+                    .setMark('spellingError', { word: error.word })
+                    .run();
             });
 
             setSpellingErrors(errors);
             setHasSpellingErrors(errors.length > 0);
 
-            const words = getWordsForSpellCheck(text);
-            const profaneWords = words.filter(word => profanityFilter.isProfane(word));
+            // Check for profanity using worker
+            const wordsFromWorker = await checkProfanity(text);
+            const profaneWords = wordsFromWorker.filter((word: string) => profanityFilter.isProfane(word));
             setHasProfanity(profaneWords.length > 0);
             setProfanityWords(profaneWords);
 
@@ -264,8 +211,10 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             if (errors.length > 0) {
                 setShowSuggestionPanel(true);
             }
-        });
-    }, [spellChecker, editor, setSpellingErrors, setHasSpellingErrors, setShowSuggestionPanel]);
+        } catch (error) {
+            console.error('Spell check failed:', error);
+        }
+    }, [isWorkerReady, editor, checkSpelling, checkProfanity, profanityFilter]);
 
     // Grammar highlight function wrapped in useCallback
     const performGrammarHighlight = useCallback((grammarErrors: GrammarError[]) => {
@@ -299,10 +248,10 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             clearTimeout(spellCheckTimeoutRef.current);
         }
 
-        spellCheckTimeoutRef.current = setTimeout(() => {
-            performSpellCheck(text);
+        spellCheckTimeoutRef.current = setTimeout(async () => {
+            await performSpellCheck(text);
         }, 500); // 500ms debounce delay
-    }, [performSpellCheck, spellCheckTimeoutRef]);
+    }, [performSpellCheck]);
 
     const { errors, isChecking } = useGrammarCheck({
         text: content,
@@ -337,10 +286,10 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
 
     // Trigger spell check when content changes
     useEffect(() => {
-        if (content && debouncedSpellCheck) {
+        if (content && isWorkerReady) {
             debouncedSpellCheck(content);
         }
-    }, [content, debouncedSpellCheck]);
+    }, [content, isWorkerReady, debouncedSpellCheck]);
 
     // Save as PDF function
     const saveAsPDF = useCallback(async () => {
@@ -441,19 +390,19 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             setSelectedRange(null);
             
             // Re-run spell check after applying correction to update highlights
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (editor) {
-                    performSpellCheck(editor.getText());
+                    await performSpellCheck(editor.getText());
                 }
             }, 100);
         }
     }, [editor, performSpellCheck]);
 
-    // Function to get spelling suggestions
+    // Function to get spelling suggestions from worker results
     const getSpellingSuggestions = useCallback((word: string): string[] => {
-        if (!word || !spellChecker) return [];
-        return spellChecker.suggest(word);
-    }, [spellChecker]);
+        const error = spellingErrors.find(err => err.word === word);
+        return error ? error.suggestions : [];
+    }, [spellingErrors]);
 
     const MenuButton = ({ onClick, isActive, children }: { onClick: () => void; isActive?: boolean; children: React.ReactNode }) => (
         <button
@@ -526,11 +475,10 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             : errors;
 
         const allSpellingErrors = spellingErrors.map(error => {
-            const suggestions = spellChecker ? spellChecker.suggest(error.word) : [];
-            console.log(`Suggestions for "${error.word}":`, suggestions); // Debug log
+            console.log(`Suggestions for "${error.word}":`, error.suggestions); // Debug log
             return {
                 word: error.word,
-                suggestions,
+                suggestions: error.suggestions,
                 range: { from: error.start, to: error.start + error.length }
             };
         });
@@ -570,7 +518,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                                     </div>
                                     <div className="p-2">
                                         {error.suggestions.length > 0 ? (
-                                            error.suggestions.slice(0, 3).map((suggestion, sIdx) => (
+                                            error.suggestions.slice(0, 3).map((suggestion: string, sIdx: number) => (
                                                 <button
                                                     key={`sugg-${sIdx}-${suggestion}`}
                                                     onClick={() => {
