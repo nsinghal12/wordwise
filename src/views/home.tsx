@@ -20,7 +20,7 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { createBlog } from "@/lib/blog"
-import { BlogHistoryItem } from "@/lib/blogHistory"
+import { BlogHistoryItem, saveBlogToHistory, updateBlogInHistory } from "@/lib/blogHistory"
 
 const LENGTH_OPTIONS = ['1 page', '3-5 pages', '8-10 pages', '15+ pages'];
 const TONE_OPTIONS = [
@@ -51,6 +51,8 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
   const [blogTitle, setBlogTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
+  const [lastValidTitle, setLastValidTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
+  const [tempTitle, setTempTitle] = useState<string>(hasHistoryItem ? selectedHistoryItem?.title || '' : '')
   const [selectedLength, setSelectedLength] = useState<string>(LENGTH_OPTIONS[0])
   const [selectedTone, setSelectedTone] = useState<string>(TONE_OPTIONS[0])
   const [selectedAudience, setSelectedAudience] = useState<string>(AUDIENCE_OPTIONS[0])
@@ -59,18 +61,70 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
     if (hasHistoryItem) {
       setPromptValue(selectedHistoryItem?.prompt || '');
       setEditorContent(selectedHistoryItem?.content || '');
-      setBlogTitle(selectedHistoryItem?.title || '');
+      const title = selectedHistoryItem?.title || '';
+      setBlogTitle(title);
+      setLastValidTitle(title);
+      setTempTitle(title);
       setShowEditor(true);
     }
   }, [hasHistoryItem, selectedHistoryItem]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempTitle(e.target.value);
+  };
+
+  const saveTitleUpdate = async (newTitle: string) => {
+    if (newTitle.trim() === '') {
+      setTempTitle(lastValidTitle);
+      return;
+    }
+    
+    if (newTitle === blogTitle) {
+      return; // No change, don't save
+    }
+    
+    setBlogTitle(newTitle);
+    setLastValidTitle(newTitle);
+    
+    // Save the updated title to history
+    if (editorContent && promptValue) {
+      if (selectedHistoryItem?.id) {
+        // Update existing history item
+        await updateBlogInHistory(selectedHistoryItem.id, newTitle, promptValue, editorContent);
+      } else {
+        // Create new history item
+        await saveBlogToHistory(newTitle, promptValue, editorContent);
+      }
+      onBlogCreated?.();
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitleUpdate(tempTitle);
+      e.currentTarget.blur();
+    }
+  };
+
+  const handleTitleBlur = () => {
+    saveTitleUpdate(tempTitle);
+  };
 
   const handleSubmit = async () => {
     if (promptValue && !isSubmitting) {
       try {
         setIsSubmitting(true);
-        const content = await createBlog(promptValue, selectedLength, selectedTone, selectedAudience);
+        const { title, content } = await createBlog(promptValue, selectedLength, selectedTone, selectedAudience);
         setEditorContent(content);
+        setBlogTitle(title);
+        setLastValidTitle(title);
+        setTempTitle(title);
         setShowEditor(true);
+        
+        // Save to history after successful creation
+        await saveBlogToHistory(title, promptValue, content);
+        
         // Refresh the sidebar history after successful blog creation
         onBlogCreated?.();
       } catch (error) {
@@ -89,6 +143,18 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
   return (
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
       <div className="w-full max-w-4xl">
+        {showEditor && (
+          <div className="mb-4">
+            <Input
+              value={tempTitle}
+              onChange={handleTitleChange}
+              onKeyDown={handleTitleKeyDown}
+              onBlur={handleTitleBlur}
+              placeholder="Enter blog title..."
+              className="text-2xl font-bold border-0 p-0 focus-visible:ring-0 placeholder-gray-400"
+            />
+          </div>
+        )}
 
         <div id='editor' className="transform transition-all duration-300 ease-in-out pb-8">
           <WordWiseEditor initialContent={editorContent} />

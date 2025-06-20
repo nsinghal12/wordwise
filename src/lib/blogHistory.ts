@@ -1,4 +1,4 @@
-import { collection, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, limit, getDocs, where, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 export interface BlogHistoryItem {
@@ -99,6 +99,43 @@ export async function getBlogHistory(): Promise<BlogHistoryItem[]> {
   }
 }
 
+export async function updateBlogInHistory(id: string, title: string, prompt: string, content: string): Promise<void> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.log('User not authenticated. Updating blog in local storage.');
+      // Fallback to localStorage for unauthenticated users
+      updateBlogInLocalStorage(id, title, prompt, content);
+      return;
+    }
+
+    const blogData = {
+      title,
+      prompt,
+      content,
+      timestamp: Date.now(),
+      updatedAt: new Date(),
+    };
+
+    // Add timeout to prevent hanging
+    const updatePromise = updateDoc(doc(db, BLOGS_COLLECTION, id), blogData);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('FIREBASE_TIMEOUT')), 5000);
+    });
+
+    await Promise.race([updatePromise, timeoutPromise]);
+    console.log('Blog updated in Firestore successfully');
+  } catch (error) {
+    if (error instanceof Error && error.message === 'FIREBASE_TIMEOUT') {
+      console.log('Firebase update timed out, using local storage instead');
+    } else {
+      console.log('Firebase unavailable, using local storage instead');
+    }
+    // Fallback to localStorage if Firebase fails or times out
+    updateBlogInLocalStorage(id, title, prompt, content);
+  }
+}
+
 // Fallback functions for localStorage (when user is not authenticated or Firebase fails)
 function saveBlogToLocalStorage(title: string, prompt: string, content: string): void {
   if (typeof window === 'undefined') return;
@@ -127,5 +164,23 @@ function getBlogHistoryFromLocalStorage(): BlogHistoryItem[] {
   } catch (error) {
     console.error('Error parsing blog history from localStorage:', error);
     return [];
+  }
+}
+
+function updateBlogInLocalStorage(id: string, title: string, prompt: string, content: string): void {
+  if (typeof window === 'undefined') return;
+  
+  const history = getBlogHistoryFromLocalStorage();
+  const itemIndex = history.findIndex(item => item.id === id);
+  
+  if (itemIndex !== -1) {
+    history[itemIndex] = {
+      ...history[itemIndex],
+      title,
+      prompt,
+      content,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem('wordwise_blog_history', JSON.stringify(history));
   }
 } 
