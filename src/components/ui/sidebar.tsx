@@ -34,7 +34,7 @@ interface SidebarProps {
 export interface SidebarRef {
   refreshHistory: () => Promise<void>;
   addOptimisticItem: (item: BlogHistoryItem) => void;
-  updateItemState: (id: string, state: 'loading' | 'success' | 'error') => void;
+  updateItemState: (id: string, state: 'loading' | 'success' | 'error' | undefined) => void;
   removeItem: (id: string) => void;
   setItemDeleting: (id: string, isDeleting: boolean) => void;
 }
@@ -68,7 +68,7 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
     setBlogHistory(prev => [item, ...prev]);
   };
 
-  const updateItemState = (id: string, state: 'loading' | 'success' | 'error') => {
+  const updateItemState = (id: string, state: 'loading' | 'success' | 'error' | undefined) => {
     setBlogHistory(prev => prev.map(item => 
       item.id === id 
         ? { ...item, persistenceState: state }
@@ -188,21 +188,23 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                     key={item.id}
                     className={`px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md group ${
                       item.isDeleting ? 'opacity-60' : ''
-                    }`}
+                    } ${item.persistenceState === 'loading' ? 'opacity-50' : ''}`}
                   >
                     <div className="flex items-center gap-2">
                       <div 
                         className={`font-medium truncate flex-1 ${
                           item.persistenceState === 'error' ? 'text-red-500' : ''
-                        } ${item.isDeleting ? 'line-through text-gray-400' : ''}`} 
+                        } ${item.isDeleting ? 'line-through text-gray-400' : ''} ${
+                          item.persistenceState === 'loading' ? 'text-gray-400' : ''
+                        }`} 
                         title={item.title}
-                        onClick={() => !item.isDeleting && onHistoryItemClick?.(item)}
+                        onClick={() => !item.isDeleting && item.persistenceState !== 'loading' && onHistoryItemClick?.(item)}
                       >
                         {item.title}
                       </div>
                       <div className="flex items-center gap-1">
                         {item.persistenceState === 'loading' && (
-                          <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                          <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
                         )}
                         {item.isDeleting && (
                           <Loader2 className="w-3 h-3 animate-spin text-red-400" />
@@ -240,15 +242,17 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                       </div>
                     </div>
                     <div 
-                      className={`text-xs text-gray-500 truncate mt-1 ${item.isDeleting ? 'line-through' : ''}`}
+                      className={`text-xs text-gray-500 truncate mt-1 ${item.isDeleting ? 'line-through' : ''} ${
+                        item.persistenceState === 'loading' ? 'text-gray-400' : ''
+                      }`}
                       title={item.prompt}
-                      onClick={() => !item.isDeleting && onHistoryItemClick?.(item)}
+                      onClick={() => !item.isDeleting && item.persistenceState !== 'loading' && onHistoryItemClick?.(item)}
                     >
                       {item.prompt}
                     </div>
                     <div 
                       className={`text-xs text-gray-400 mt-1 ${item.isDeleting ? 'line-through' : ''}`}
-                      onClick={() => !item.isDeleting && onHistoryItemClick?.(item)}
+                      onClick={() => !item.isDeleting && item.persistenceState !== 'loading' && onHistoryItemClick?.(item)}
                     >
                       {formatDate(item.timestamp)}
                     </div>

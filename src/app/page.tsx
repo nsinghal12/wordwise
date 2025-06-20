@@ -47,27 +47,55 @@ export default function App() {
     try {
       console.log('Copying item:', item);
       
+      // Create optimistic copy item immediately
+      const optimisticCopy: BlogHistoryItem = {
+        id: `temp-${Date.now()}`, // Temporary ID for optimistic update
+        title: `${item.title} (Copy)`,
+        prompt: item.prompt,
+        content: item.content,
+        timestamp: Date.now(),
+        userId: item.userId,
+        persistenceState: 'loading'
+      };
+      
+      // Add optimistic item to the top of the sidebar immediately
+      sidebarRef.current?.addOptimisticItem(optimisticCopy);
+      
       // Create a copy in the database
       const result = await copyBlogFromHistory(item);
       
       if (result.success && result.newItem) {
-        // Add the optimistic item to the sidebar
-        sidebarRef.current?.addOptimisticItem(result.newItem);
+        // Remove the optimistic item and add the real one
+        sidebarRef.current?.removeItem(optimisticCopy.id);
+        sidebarRef.current?.addOptimisticItem({
+          ...result.newItem,
+          persistenceState: 'success'
+        });
+        
+        // Clear the success state after a short delay to return to normal appearance
+        setTimeout(() => {
+          if (result.newItem) {
+            sidebarRef.current?.updateItemState(result.newItem.id, undefined);
+          }
+        }, 1000);
         
         // Load the copied item in the editor
         setSelectedHistoryItem(result.newItem);
         
-        // Refresh the sidebar to get the updated list
-        await sidebarRef.current?.refreshHistory();
-        
         console.log('Blog copied successfully');
       } else {
+        // Update the optimistic item to show error state
+        sidebarRef.current?.updateItemState(optimisticCopy.id, 'error');
         console.error('Failed to copy blog:', result.error);
-        // You might want to show an error message to the user here
+        
+        // Remove the failed optimistic item after a delay
+        setTimeout(() => {
+          sidebarRef.current?.removeItem(optimisticCopy.id);
+        }, 3000);
       }
     } catch (error) {
       console.error('Error copying blog:', error);
-      // You might want to show an error message to the user here
+      // The optimistic item will remain in error state
     }
   };
 
