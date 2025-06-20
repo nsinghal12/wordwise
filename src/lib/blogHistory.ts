@@ -1,6 +1,10 @@
 import { collection, addDoc, query, orderBy, limit, getDocs, where, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
+type STORAGE_STRATEGY = 'LOCAL_STORAGE' | 'FIREBASE';
+
+const CHOSEN_STORAGE_STRATEGY: STORAGE_STRATEGY = 'FIREBASE';
+
 export interface BlogHistoryItem {
   id: string;
   title: string;
@@ -8,18 +12,33 @@ export interface BlogHistoryItem {
   content: string;
   timestamp: number;
   userId?: string;
+  persistenceState?: 'loading' | 'success' | 'error';
 }
 
 const BLOGS_COLLECTION = 'blogs';
 
-export async function saveBlogToHistory(title: string, prompt: string, content: string): Promise<void> {
+export async function saveBlogToHistory(title: string, prompt: string, content: string): Promise<{ success: boolean; error?: string }> {
+  if (CHOSEN_STORAGE_STRATEGY === 'LOCAL_STORAGE') {
+    try {
+      saveBlogToLocalStorage(title, prompt, content);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // Firebase strategy
   try {
     const user = auth.currentUser;
     if (!user) {
       console.log('User not authenticated. Saving blog to local storage.');
       // Fallback to localStorage for unauthenticated users
-      saveBlogToLocalStorage(title, prompt, content);
-      return;
+      try {
+        saveBlogToLocalStorage(title, prompt, content);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
     }
 
     const blogData = {
@@ -39,6 +58,7 @@ export async function saveBlogToHistory(title: string, prompt: string, content: 
 
     await Promise.race([savePromise, timeoutPromise]);
     console.log('Blog saved to Firestore successfully');
+    return { success: true };
   } catch (error) {
     if (error instanceof Error && error.message === 'FIREBASE_TIMEOUT') {
       console.log('Firebase save timed out, using local storage instead');
@@ -46,11 +66,21 @@ export async function saveBlogToHistory(title: string, prompt: string, content: 
       console.log('Firebase unavailable, using local storage instead');
     }
     // Fallback to localStorage if Firebase fails or times out
-    saveBlogToLocalStorage(title, prompt, content);
+    try {
+      saveBlogToLocalStorage(title, prompt, content);
+      return { success: true };
+    } catch (fallbackError) {
+      return { success: false, error: fallbackError instanceof Error ? fallbackError.message : 'Unknown error' };
+    }
   }
 }
 
 export async function getBlogHistory(): Promise<BlogHistoryItem[]> {
+  if (CHOSEN_STORAGE_STRATEGY === 'LOCAL_STORAGE') {
+    return getBlogHistoryFromLocalStorage();
+  }
+
+  // Firebase strategy
   try {
     const user = auth.currentUser;
     if (!user) {
@@ -99,14 +129,28 @@ export async function getBlogHistory(): Promise<BlogHistoryItem[]> {
   }
 }
 
-export async function updateBlogInHistory(id: string, title: string, prompt: string, content: string): Promise<void> {
+export async function updateBlogInHistory(id: string, title: string, prompt: string, content: string): Promise<{ success: boolean; error?: string }> {
+  if (CHOSEN_STORAGE_STRATEGY === 'LOCAL_STORAGE') {
+    try {
+      updateBlogInLocalStorage(id, title, prompt, content);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // Firebase strategy
   try {
     const user = auth.currentUser;
     if (!user) {
       console.log('User not authenticated. Updating blog in local storage.');
       // Fallback to localStorage for unauthenticated users
-      updateBlogInLocalStorage(id, title, prompt, content);
-      return;
+      try {
+        updateBlogInLocalStorage(id, title, prompt, content);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
     }
 
     const blogData = {
@@ -125,6 +169,7 @@ export async function updateBlogInHistory(id: string, title: string, prompt: str
 
     await Promise.race([updatePromise, timeoutPromise]);
     console.log('Blog updated in Firestore successfully');
+    return { success: true };
   } catch (error) {
     if (error instanceof Error && error.message === 'FIREBASE_TIMEOUT') {
       console.log('Firebase update timed out, using local storage instead');
@@ -132,7 +177,12 @@ export async function updateBlogInHistory(id: string, title: string, prompt: str
       console.log('Firebase unavailable, using local storage instead');
     }
     // Fallback to localStorage if Firebase fails or times out
-    updateBlogInLocalStorage(id, title, prompt, content);
+    try {
+      updateBlogInLocalStorage(id, title, prompt, content);
+      return { success: true };
+    } catch (fallbackError) {
+      return { success: false, error: fallbackError instanceof Error ? fallbackError.message : 'Unknown error' };
+    }
   }
 }
 

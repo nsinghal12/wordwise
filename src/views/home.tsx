@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { createBlog } from "@/lib/blog"
 import { BlogHistoryItem, saveBlogToHistory, updateBlogInHistory } from "@/lib/blogHistory"
+import { SidebarRef } from "@/components/ui/sidebar"
 
 const LENGTH_OPTIONS = ['1 page', '3-5 pages', '8-10 pages', '15+ pages'];
 const TONE_OPTIONS = [
@@ -41,9 +42,10 @@ const AUDIENCE_OPTIONS = [
 interface HomeProps {
   selectedHistoryItem?: BlogHistoryItem | null;
   onBlogCreated?: () => void;
+  sidebarRef?: React.RefObject<SidebarRef | null>;
 }
 
-export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) {
+export default function Home({ selectedHistoryItem, onBlogCreated, sidebarRef }: HomeProps) {
   const hasHistoryItem = selectedHistoryItem !== null;
 
   const [showEditor, setShowEditor] = useState(hasHistoryItem ? true : false)
@@ -88,14 +90,47 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
     
     // Save the updated title to history
     if (editorContent && promptValue) {
-      if (selectedHistoryItem?.id) {
-        // Update existing history item
-        await updateBlogInHistory(selectedHistoryItem.id, newTitle, promptValue, editorContent);
+      let itemId = selectedHistoryItem?.id;
+      
+      if (!itemId) {
+        // Create new optimistic item
+        itemId = Date.now().toString();
+        const optimisticItem: BlogHistoryItem = {
+          id: itemId,
+          title: newTitle,
+          prompt: promptValue,
+          content: editorContent,
+          timestamp: Date.now(),
+          persistenceState: 'loading'
+        };
+        sidebarRef?.current?.addOptimisticItem(optimisticItem);
       } else {
-        // Create new history item
-        await saveBlogToHistory(newTitle, promptValue, editorContent);
+        // Update existing item state to loading
+        sidebarRef?.current?.updateItemState(itemId, 'loading');
       }
-      onBlogCreated?.();
+
+      try {
+        let result;
+        if (selectedHistoryItem?.id) {
+          // Update existing history item
+          result = await updateBlogInHistory(selectedHistoryItem.id, newTitle, promptValue, editorContent);
+        } else {
+          // Create new history item
+          result = await saveBlogToHistory(newTitle, promptValue, editorContent);
+        }
+        
+        // Update item state based on result
+        if (result.success) {
+          sidebarRef?.current?.updateItemState(itemId, 'success');
+        } else {
+          sidebarRef?.current?.updateItemState(itemId, 'error');
+        }
+        
+        onBlogCreated?.();
+      } catch (error) {
+        console.error('Error saving blog:', error);
+        sidebarRef?.current?.updateItemState(itemId, 'error');
+      }
     }
   };
 
@@ -122,11 +157,35 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
         setTempTitle(title);
         setShowEditor(true);
         
-        // Save to history after successful creation
-        await saveBlogToHistory(title, promptValue, content);
+        // Create optimistic item immediately
+        const itemId = Date.now().toString();
+        const optimisticItem: BlogHistoryItem = {
+          id: itemId,
+          title,
+          prompt: promptValue,
+          content,
+          timestamp: Date.now(),
+          persistenceState: 'loading'
+        };
+        sidebarRef?.current?.addOptimisticItem(optimisticItem);
         
-        // Refresh the sidebar history after successful blog creation
-        onBlogCreated?.();
+        // Save to history after successful creation
+        try {
+          const result = await saveBlogToHistory(title, promptValue, content);
+          
+          // Update item state based on result
+          if (result.success) {
+            sidebarRef?.current?.updateItemState(itemId, 'success');
+          } else {
+            sidebarRef?.current?.updateItemState(itemId, 'error');
+          }
+          
+          // Refresh the sidebar history after successful blog creation
+          onBlogCreated?.();
+        } catch (saveError) {
+          console.error('Error saving blog to history:', saveError);
+          sidebarRef?.current?.updateItemState(itemId, 'error');
+        }
       } catch (error) {
         console.error('Error submitting prompt:', error);
         // You might want to show an error message to the user here

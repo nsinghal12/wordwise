@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ChevronDown,
   History,
+  Loader2,
 } from "lucide-react"
 import { getBlogHistory, BlogHistoryItem } from "@/lib/blogHistory"
 
@@ -19,6 +20,8 @@ interface SidebarProps {
 
 export interface SidebarRef {
   refreshHistory: () => Promise<void>;
+  addOptimisticItem: (item: BlogHistoryItem) => void;
+  updateItemState: (id: string, state: 'loading' | 'success' | 'error') => void;
 }
 
 export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick }, ref) => {
@@ -40,9 +43,23 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
     loadBlogHistory();
   }, [])
 
-  // Expose refresh function via ref
+  const addOptimisticItem = (item: BlogHistoryItem) => {
+    setBlogHistory(prev => [item, ...prev]);
+  };
+
+  const updateItemState = (id: string, state: 'loading' | 'success' | 'error') => {
+    setBlogHistory(prev => prev.map(item => 
+      item.id === id 
+        ? { ...item, persistenceState: state }
+        : item
+    ));
+  };
+
+  // Expose functions via ref
   useImperativeHandle(ref, () => ({
-    refreshHistory: loadBlogHistory
+    refreshHistory: loadBlogHistory,
+    addOptimisticItem,
+    updateItemState
   }))
 
   const formatDate = (timestamp: number) => {
@@ -92,7 +109,19 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
                     className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 cursor-pointer rounded-md"
                     onClick={() => onHistoryItemClick?.(item)}
                   >
-                    <div className="font-medium truncate" title={item.title}>{item.title}</div>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className={`font-medium truncate flex-1 ${
+                          item.persistenceState === 'error' ? 'text-red-500' : ''
+                        }`} 
+                        title={item.title}
+                      >
+                        {item.title}
+                      </div>
+                      {item.persistenceState === 'loading' && (
+                        <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                      )}
+                    </div>
                     <div className="text-xs text-gray-500 truncate mt-1" title={item.prompt}>{item.prompt}</div>
                     <div className="text-xs text-gray-400 mt-1">{formatDate(item.timestamp)}</div>
                   </div>

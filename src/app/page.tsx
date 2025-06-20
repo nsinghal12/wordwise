@@ -67,7 +67,7 @@ export default function App() {
         <Header onLogout={handleLogout} />
 
         {/* Main Content Area */}
-        <Home selectedHistoryItem={selectedHistoryItem} onBlogCreated={() => sidebarRef.current?.refreshHistory()} />
+        <Home selectedHistoryItem={selectedHistoryItem} onBlogCreated={() => sidebarRef.current?.refreshHistory()} sidebarRef={sidebarRef} />
       </div>
     </div>
   );
