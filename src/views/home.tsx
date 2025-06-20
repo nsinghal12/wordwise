@@ -24,15 +24,17 @@ import { BlogHistoryItem } from "@/lib/blogHistory"
 
 interface HomeProps {
   selectedHistoryItem?: BlogHistoryItem | null;
+  onBlogCreated?: () => void;
 }
 
-export default function Home({ selectedHistoryItem }: HomeProps) {
+export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) {
   const hasHistoryItem = selectedHistoryItem !== null;
 
   const [showEditor, setShowEditor] = useState(hasHistoryItem ? true : false)
   const [editorContent, setEditorContent] = useState<string>(hasHistoryItem ? selectedHistoryItem?.content || '' : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [promptValue, setPromptValue] = useState<string>(hasHistoryItem ? selectedHistoryItem?.prompt || '' : '')
+  const [selectedLength, setSelectedLength] = useState<string>('1 page')
 
   useEffect(() => {
     if (hasHistoryItem) {
@@ -46,9 +48,11 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
     if (promptValue && !isSubmitting) {
       try {
         setIsSubmitting(true);
-        const content = await createBlog(promptValue);
+        const content = await createBlog(promptValue, selectedLength);
         setEditorContent(content);
         setShowEditor(true);
+        // Refresh the sidebar history after successful blog creation
+        onBlogCreated?.();
       } catch (error) {
         console.error('Error submitting prompt:', error);
         // You might want to show an error message to the user here
@@ -94,36 +98,67 @@ export default function Home({ selectedHistoryItem }: HomeProps) {
               />
               <div className="flex items-center justify-between mt-6">
                 <div className="flex items-center gap-3">
-                  {/* <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-sm bg-white hover:bg-gray-50 transition-colors"
-                      >
-                        New Project
-                        <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>New Project</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
+                        id='length-dropdown'
                         variant="outline"
                         size="sm"
                         className="text-sm bg-white hover:bg-gray-50 transition-colors"
                       >
-                        v0-1.5-md
+                        {selectedLength}
                         <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>v0-1.5-md</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedLength('1 page')}>1 page</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedLength('3-5 pages')}>3-5 pages</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedLength('8-10 pages')}>8-10 pages</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedLength('15+ pages')}>15+ pages</DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu> */}
+                  </DropdownMenu>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        id='tone-dropdown'
+                        variant="outline"
+                        size="sm"
+                        className="text-sm bg-white hover:bg-gray-50 transition-colors"
+                      >
+                        Tone
+                        <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>Informative/Educational</DropdownMenuItem>
+                      <DropdownMenuItem>Conversational/Friendly</DropdownMenuItem>
+                      <DropdownMenuItem>Professional/Authoritative</DropdownMenuItem>
+                      <DropdownMenuItem>Enthusiastic/Uplifting</DropdownMenuItem>
+                      <DropdownMenuItem>Humorous/Witty</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        id='audience-dropdown'
+                        variant="outline"
+                        size="sm"
+                        className="text-sm bg-white hover:bg-gray-50 transition-colors"
+                      >
+                        Audience
+                        <ChevronDown className="w-4 h-4 ml-1 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>Beginner/Novice</DropdownMenuItem>
+                      <DropdownMenuItem>General Public/Broad Audience</DropdownMenuItem>
+                      <DropdownMenuItem>Experienced/Intermediate</DropdownMenuItem>
+                      <DropdownMenuItem>Experts/Professionals</DropdownMenuItem>
+                      <DropdownMenuItem>Specific Niche/Enthusiasts</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div className="flex items-center gap-3">
                   {/* <Button

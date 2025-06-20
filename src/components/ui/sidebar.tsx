@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Search,
@@ -17,14 +17,33 @@ interface SidebarProps {
   onHistoryItemClick?: (item: BlogHistoryItem) => void;
 }
 
-export function Sidebar({ onHistoryItemClick }: SidebarProps) {
+export interface SidebarRef {
+  refreshHistory: () => Promise<void>;
+}
+
+export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick }, ref) => {
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true)
   const [blogHistory, setBlogHistory] = useState<BlogHistoryItem[]>([])
 
+  const loadBlogHistory = async () => {
+    try {
+      const history = await getBlogHistory();
+      setBlogHistory(history);
+    } catch (error) {
+      console.error('Error loading blog history:', error);
+      setBlogHistory([]);
+    }
+  };
+
   useEffect(() => {
-    setBlogHistory(getBlogHistory())
+    loadBlogHistory();
   }, [])
+
+  // Expose refresh function via ref
+  useImperativeHandle(ref, () => ({
+    refreshHistory: loadBlogHistory
+  }))
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -84,4 +103,4 @@ export function Sidebar({ onHistoryItemClick }: SidebarProps) {
       </div>
     </div>
   )
-} 
+}) 

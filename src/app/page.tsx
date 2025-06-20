@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Sidebar } from "@/components/ui/sidebar"
+import { useState, useEffect, useRef } from "react"
+import { Sidebar, SidebarRef } from "@/components/ui/sidebar"
 import { Header } from "@/components/ui/header"
 import Home from "@/views/home"
 import LoginView from "@/views/login"
@@ -12,6 +12,7 @@ export default function App() {
   const { user, loading } = useAuth();
   const [currentRoute, setCurrentRoute] = useState('/');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<BlogHistoryItem | null>(null);
+  const sidebarRef = useRef<SidebarRef>(null);
 
   // Set initial route based on user state
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar */}
-      <Sidebar onHistoryItemClick={handleHistoryItemClick} />
+      <Sidebar ref={sidebarRef} onHistoryItemClick={handleHistoryItemClick} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -66,7 +67,7 @@ export default function App() {
         <Header onLogout={handleLogout} />
 
         {/* Main Content Area */}
-        <Home selectedHistoryItem={selectedHistoryItem} />
+        <Home selectedHistoryItem={selectedHistoryItem} onBlogCreated={() => sidebarRef.current?.refreshHistory()} />
       </div>
     </div>
   );

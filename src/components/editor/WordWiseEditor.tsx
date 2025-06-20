@@ -42,6 +42,39 @@ const SpellingErrorMark = Mark.create({
     },
 });
 
+// Custom grammar error mark extension
+const GrammarErrorMark = Mark.create({
+    name: 'grammarError',
+    
+    addAttributes() {
+        return {
+            errorId: {
+                default: null,
+            },
+            message: {
+                default: null,
+            },
+        };
+    },
+    
+    parseHTML() {
+        return [
+            {
+                tag: 'span[data-grammar-error]',
+            },
+        ];
+    },
+    
+    renderHTML({ HTMLAttributes }) {
+        return ['span', {
+            ...HTMLAttributes,
+            'data-grammar-error': '',
+            class: 'grammar-error bg-orange-100 border-b-2 border-orange-400 border-dotted cursor-pointer hover:bg-orange-200 transition-colors',
+            title: `Grammar issue: ${HTMLAttributes.message || 'Click for suggestions'}`
+        }, 0];
+    },
+});
+
 interface WordWiseEditorProps {
     initialContent?: string;
     spellCheck?: boolean;
@@ -112,6 +145,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 types: ['heading', 'paragraph'],
             }),
             SpellingErrorMark,
+            GrammarErrorMark,
         ],
         content: initialContent,
         editorProps: {
@@ -134,6 +168,20 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                         setSelectedRange({ 
                             from: matchingError.start + 1, 
                             to: matchingError.start + 1 + matchingError.length 
+                        });
+                        setShowSuggestionPanel(true);
+                    }
+                } else if (event.target instanceof HTMLElement && event.target.hasAttribute('data-grammar-error')) {
+                    const errorId = event.target.getAttribute('data-grammar-error-id');
+                    const grammarError = errors.find(error => 
+                        pos >= error.offset + 1 && pos <= error.offset + 1 + error.length
+                    );
+                    
+                    if (grammarError) {
+                        setSelectedError(grammarError);
+                        setSelectedRange({ 
+                            from: grammarError.offset + 1, 
+                            to: grammarError.offset + 1 + grammarError.length 
                         });
                         setShowSuggestionPanel(true);
                     }
@@ -219,6 +267,32 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
         });
     }, [spellChecker, editor, setSpellingErrors, setHasSpellingErrors, setShowSuggestionPanel]);
 
+    // Grammar highlight function wrapped in useCallback
+    const performGrammarHighlight = useCallback((grammarErrors: GrammarError[]) => {
+        if (!editor) return;
+
+        // Run grammar highlighting in a non-blocking way using a Promise
+        Promise.resolve().then(() => {
+            // First, clear all existing grammar error marks
+            editor.chain().unsetMark('grammarError').run();
+            
+            // Apply grammar error marks for each error
+            grammarErrors.forEach((error, index) => {
+                const from = error.offset + 1; // Add 1 to account for document structure
+                const to = from + error.length;
+                
+                // Apply grammar error mark to this error
+                editor.chain()
+                    .setTextSelection({ from, to })
+                    .setMark('grammarError', { 
+                        errorId: `grammar-${index}`,
+                        message: error.message 
+                    })
+                    .run();
+            });
+        });
+    }, [editor]);
+
     // Debounced spell check
     debouncedSpellCheck = useCallback((text: string) => {
         if (spellCheckTimeoutRef.current) {
@@ -242,6 +316,16 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             setShowSuggestionPanel(true);
         }
     }, [errors]);
+
+    // Highlight grammar errors when they change
+    useEffect(() => {
+        if (errors.length > 0) {
+            performGrammarHighlight(errors);
+        } else if (editor) {
+            // Clear grammar error marks when no errors
+            editor.chain().unsetMark('grammarError').run();
+        }
+    }, [errors, performGrammarHighlight, editor]);
 
     useEffect(() => {
         if (editor && initialContent) {

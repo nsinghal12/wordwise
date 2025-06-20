@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { prompt } = body;
+    const { prompt, length } = body;
 
     if (!prompt) {
       return NextResponse.json(
@@ -36,8 +36,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Determine the length instruction based on the selected length
+    let lengthInstruction = '';
+    switch(length) {
+      case '1 page':
+        lengthInstruction = 'Keep it concise and focused - aim for about 500-800 words (1 page length).';
+        break;
+      case '3-5 pages':
+        lengthInstruction = 'Write a comprehensive piece - aim for about 1,500-2,500 words (3-5 pages length).';
+        break;
+      case '8-10 pages':
+        lengthInstruction = 'Create an in-depth, detailed article - aim for about 4,000-5,000 words (8-10 pages length).';
+        break;
+      case '15+ pages':
+        lengthInstruction = 'Write an extensive, comprehensive guide - aim for 7,500+ words (15+ pages length).';
+        break;
+      default:
+        lengthInstruction = 'Keep it well-structured and appropriately detailed.';
+    }
+
     // Create the blog writing prompt
     const blogPrompt = `Write a blog post on "${prompt}" using markdown with this framework:
+
+${lengthInstruction}
 
 1. **Title:** Create a 4-8 word viral-style title with power words and 1 emoji (e.g., "The Untold Truth About ${prompt} 🤯")
    
