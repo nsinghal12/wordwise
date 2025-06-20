@@ -50,7 +50,7 @@ export default function Home({ selectedHistoryItem, onBlogCreated }: HomeProps) 
     if (promptValue && !isSubmitting) {
       try {
         setIsSubmitting(true);
-        const content = await createBlog(promptValue, selectedLength);
+        const content = await createBlog(promptValue, selectedLength, selectedTone, selectedAudience);
         setEditorContent(content);
         setShowEditor(true);
         // Refresh the sidebar history after successful blog creation
