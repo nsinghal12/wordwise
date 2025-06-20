@@ -9,13 +9,5 @@
     "frameworksBackend": {
       "region": "us-west1"
     }
-  },
-  "emulators": {
-    "auth": {
-      "port": 9099
-    },
-    "ui": {
-      "enabled": true
-    }
   }
 }

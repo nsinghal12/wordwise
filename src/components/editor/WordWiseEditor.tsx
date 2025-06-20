@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { marked } from 'marked';
 import Alignment from '@tiptap/extension-text-align';
+import { Mark } from '@tiptap/core';
 import { useGrammarCheck, GrammarError } from '../../lib/useGrammarCheck';
 import { Save, FileDown, Check, X, AlertTriangle, MessageSquare, Wand2, FileText } from 'lucide-react';
 import { Filter } from 'bad-words';
@@ -10,6 +11,36 @@ import Spellchecker from 'hunspell-spellchecker';
 import { getWordsForSpellCheck } from '@/lib/utils';
 
 const checker: any = new Spellchecker();
+
+// Custom spelling error mark extension
+const SpellingErrorMark = Mark.create({
+    name: 'spellingError',
+    
+    addAttributes() {
+        return {
+            word: {
+                default: null,
+            },
+        };
+    },
+    
+    parseHTML() {
+        return [
+            {
+                tag: 'span[data-spelling-error]',
+            },
+        ];
+    },
+    
+    renderHTML({ HTMLAttributes }) {
+        return ['span', {
+            ...HTMLAttributes,
+            'data-spelling-error': '',
+            class: 'spelling-error bg-red-100 border-b-2 border-red-400 border-dotted cursor-pointer hover:bg-red-200 transition-colors',
+            title: 'Click for spelling suggestions'
+        }, 0];
+    },
+});
 
 interface WordWiseEditorProps {
     initialContent?: string;
@@ -80,6 +111,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             Alignment.configure({
                 types: ['heading', 'paragraph'],
             }),
+            SpellingErrorMark,
         ],
         content: initialContent,
         editorProps: {
@@ -89,13 +121,12 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 autocorrect: spellCheck ? 'on' : 'off',
             },
             handleClick(view, pos, event) {
-                if (event.target instanceof HTMLElement && event.target.classList.contains('spelling-error')) {
+                if (event.target instanceof HTMLElement && event.target.hasAttribute('data-spelling-error')) {
                     const word = event.target.textContent || '';
                     
                     // Find the spelling error that matches this word and position
                     const matchingError = spellingErrors.find(error => {
-                        const errorText = view.state.doc.textBetween(error.start + 1, error.start + 1 + error.length);
-                        return errorText === word && pos >= error.start + 1 && pos <= error.start + 1 + error.length;
+                        return error.word === word && pos >= error.start + 1 && pos <= error.start + 1 + error.length;
                     });
                     
                     if (matchingError) {
@@ -104,6 +135,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                             from: matchingError.start + 1, 
                             to: matchingError.start + 1 + matchingError.length 
                         });
+                        setShowSuggestionPanel(true);
                     }
                 } else {
                     const { from, to } = view.state.selection;
@@ -134,6 +166,9 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             const doc = editor.state.doc;
             const errors: SpellingError[] = [];
             
+            // First, clear all existing spelling error marks
+            editor.chain().unsetMark('spellingError').run();
+            
             // Walk through the document and find misspelled words
             doc.descendants((node, pos) => {
                 if (node.isText && node.text) {
@@ -146,11 +181,20 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                                 // Skip numbers and URLs
                                 if (!word.match(/^\d+$/) && !word.match(/^https?:\/\//)) {
                                     if (!spellChecker.check(word)) {
+                                        const wordStart = pos + wordIndex;
+                                        const wordEnd = wordStart + word.length;
+                                        
                                         errors.push({
                                             word,
-                                            start: pos + wordIndex,
+                                            start: wordStart,
                                             length: word.length
                                         });
+                                        
+                                        // Apply spelling error mark to this word
+                                        editor.chain()
+                                            .setTextSelection({ from: wordStart, to: wordEnd })
+                                            .setMark('spellingError', { word })
+                                            .run();
                                     }
                                 }
                                 offset = wordIndex + word.length;
@@ -302,6 +346,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                     .chain()
                     .focus()
                     .setTextSelection({ from: range.from, to: range.to })
+                    .unsetMark('spellingError')
                     .deleteSelection()
                     .insertContent(cleanReplacement)
                     .run();
@@ -310,8 +355,15 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
             // Clear the selection after applying the suggestion
             setSelectedText('');
             setSelectedRange(null);
+            
+            // Re-run spell check after applying correction to update highlights
+            setTimeout(() => {
+                if (editor) {
+                    performSpellCheck(editor.getText());
+                }
+            }, 100);
         }
-    }, [editor]);
+    }, [editor, performSpellCheck]);
 
     // Function to get spelling suggestions
     const getSpellingSuggestions = useCallback((word: string): string[] => {
@@ -664,7 +716,7 @@ const WordWiseEditor: React.FC<WordWiseEditorProps> = ({
                 <div className="relative">
                     <EditorContent
                         editor={editor}
-                        className="min-h-[200px] [&_*]:spelling-error:underline [&_*]:spelling-error:decoration-red-500 [&_*]:spelling-error:decoration-wavy"
+                        className="min-h-[200px]"
                     />
 
                     {/* Profanity Warning */}
