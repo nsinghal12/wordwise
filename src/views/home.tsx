@@ -240,7 +240,8 @@ const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreate
               onKeyDown={handleTitleKeyDown}
               onBlur={handleTitleBlur}
               placeholder="Enter blog title..."
-              className="text-2xl font-bold border-0 p-0 focus-visible:ring-0 placeholder-gray-400"
+              className="font-bold bg-white border border-gray-200 rounded-lg p-4 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent placeholder-gray-400 hover:border-gray-300 transition-colors"
+              style={{ fontSize: '32px', height: '64px' }}
             />
           </div>
         )}
