@@ -16,6 +16,7 @@ import { getBlogHistory, BlogHistoryItem } from "@/lib/blogHistory"
 
 interface SidebarProps {
   onHistoryItemClick?: (item: BlogHistoryItem) => void;
+  onNewDocument?: () => void;
 }
 
 export interface SidebarRef {
@@ -24,7 +25,7 @@ export interface SidebarRef {
   updateItemState: (id: string, state: 'loading' | 'success' | 'error') => void;
 }
 
-export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick }, ref) => {
+export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClick, onNewDocument }, ref) => {
   const [isRecentsExpanded, setIsRecentsExpanded] = useState(false)
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(true)
   const [blogHistory, setBlogHistory] = useState<BlogHistoryItem[]>([])
@@ -84,7 +85,12 @@ export const Sidebar = forwardRef<SidebarRef, SidebarProps>(({ onHistoryItemClic
             v0
           </div>
         </div>
-        <Button className="w-full justify-start bg-gray-100 text-gray-700 hover:bg-gray-200">New Document</Button>
+        <Button 
+          className="w-full justify-start bg-gray-100 text-gray-700 hover:bg-gray-200"
+          onClick={onNewDocument}
+        >
+          New Document
+        </Button>
       </div>
 
       {/* Navigation */}

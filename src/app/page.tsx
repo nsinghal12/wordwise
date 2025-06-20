@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Sidebar, SidebarRef } from "@/components/ui/sidebar"
 import { Header } from "@/components/ui/header"
-import Home from "@/views/home"
+import Home, { HomeRef } from "@/views/home"
 import LoginView from "@/views/login"
 import { BlogHistoryItem } from "@/lib/blogHistory"
 import { useAuth } from "@/lib/AuthContext"
@@ -13,6 +13,7 @@ export default function App() {
   const [currentRoute, setCurrentRoute] = useState('/');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<BlogHistoryItem | null>(null);
   const sidebarRef = useRef<SidebarRef>(null);
+  const homeRef = useRef<HomeRef>(null);
 
   // Set initial route based on user state
   useEffect(() => {
@@ -41,6 +42,12 @@ export default function App() {
     setSelectedHistoryItem(item);
   };
 
+  const handleNewDocument = () => {
+    console.log('New document clicked');
+    setSelectedHistoryItem(null);
+    homeRef.current?.resetToNewDocument();
+  };
+
   // Show loading while determining auth state
   if (loading) {
     return (
@@ -59,7 +66,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar */}
-      <Sidebar ref={sidebarRef} onHistoryItemClick={handleHistoryItemClick} />
+      <Sidebar ref={sidebarRef} onHistoryItemClick={handleHistoryItemClick} onNewDocument={handleNewDocument} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -67,7 +74,7 @@ export default function App() {
         <Header onLogout={handleLogout} />
 
         {/* Main Content Area */}
-        <Home selectedHistoryItem={selectedHistoryItem} onBlogCreated={() => sidebarRef.current?.refreshHistory()} sidebarRef={sidebarRef} />
+        <Home ref={homeRef} selectedHistoryItem={selectedHistoryItem} onBlogCreated={() => sidebarRef.current?.refreshHistory()} sidebarRef={sidebarRef} />
       </div>
     </div>
   );

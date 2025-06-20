@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -45,7 +45,11 @@ interface HomeProps {
   sidebarRef?: React.RefObject<SidebarRef | null>;
 }
 
-export default function Home({ selectedHistoryItem, onBlogCreated, sidebarRef }: HomeProps) {
+export interface HomeRef {
+  resetToNewDocument: () => void;
+}
+
+const Home = forwardRef<HomeRef, HomeProps>(({ selectedHistoryItem, onBlogCreated, sidebarRef }, ref) => {
   const hasHistoryItem = selectedHistoryItem !== null;
 
   const [showEditor, setShowEditor] = useState(hasHistoryItem ? true : false)
@@ -198,6 +202,32 @@ export default function Home({ selectedHistoryItem, onBlogCreated, sidebarRef }:
   const setPromptValueHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPromptValue(e.target.value || '');
   }
+
+  const resetToNewDocument = () => {
+    // Reset all form states
+    setPromptValue('');
+    setEditorContent('# Start writing here...');
+    setBlogTitle('');
+    setLastValidTitle('');
+    setTempTitle('');
+    setSelectedLength(LENGTH_OPTIONS[0]);
+    setSelectedTone(TONE_OPTIONS[0]);
+    setSelectedAudience(AUDIENCE_OPTIONS[0]);
+    setShowEditor(false);
+    
+    // Focus the prompt input after a short delay to ensure DOM is updated
+    setTimeout(() => {
+      const promptInput = document.getElementById('prompt-input');
+      if (promptInput) {
+        promptInput.focus();
+      }
+    }, 100);
+  };
+
+  // Expose resetToNewDocument via ref
+  useImperativeHandle(ref, () => ({
+    resetToNewDocument
+  }))
 
   return (
     <div className="flex-1 flex flex-col items-center p-8 bg-gray-50">
@@ -423,4 +453,8 @@ export default function Home({ selectedHistoryItem, onBlogCreated, sidebarRef }:
       </div>
     </div>
   )
-}
+});
+
+Home.displayName = 'Home';
+
+export default Home;
